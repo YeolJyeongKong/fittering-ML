@@ -1,5 +1,7 @@
 # dataset
 *.zip
+*.png
+*.jpg
 NOMO-3d-400-scans_and_tc2_measurements/
 aihub-dataset/
 
