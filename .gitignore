@@ -8,6 +8,7 @@ aihub-dataset/
 # opensource
 modeling/Human-Segmentation-PyTorch/
 modeling/SemanticGuidedHumanMatting/
+modeling/calvis/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
