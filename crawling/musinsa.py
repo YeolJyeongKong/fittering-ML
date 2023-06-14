@@ -2,12 +2,15 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
+from selenium.webdriver.chrome.service import Service
 
 import re
 import os
 import urllib.request
 import time
 import ssl
+from tqdm import tqdm
+import pandas as pd
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -21,45 +24,49 @@ def get_category_name(category_a):
     return category
 
 def move_product_save(page_num):
-    global category_text
+    global category_text, category_size, total_page, category_fail_cnt
     length = len(driver.find_elements(By.XPATH, '//*[@id="searchList"]/li'))
     product_a_lst = driver.find_elements(By.XPATH, '//*[@id="searchList"]/li/div[@class="li_inner"]/div[@class="article_info"]/p[@class="list_info"]/a')
     product_href_lst = list(map(lambda x: x.get_attribute('href'), product_a_lst))
-    for k, product_href in enumerate(product_href_lst):
+    for k in tqdm(range(len(product_href_lst)), desc=f"{current_page} / {total_page} page crawling", position=1):
+        product_href = product_href_lst[k]
         driver.get(product_href)
-        time.sleep(3)
-        file_dir = category_text + '/' + f"{page_num}_{k}" + '/'
-        os.makedirs(file_dir, exist_ok=True)
-
         src = driver.find_element(By.XPATH, '//*[@id="bigimg"]').get_attribute('src')
-        urllib.request.urlretrieve(src, file_dir + "bigimg.png")
+        urllib.request.urlretrieve(src, "bigimg.png")
+        category_size += os.path.getsize("bigimg.png") / 1024**3
+        os.remove("bigimg.png")
 
         img_lst = driver.find_elements(By.XPATH, '//div[@class="detail_product_info_item"]/descendant::img')#//*[@id="detail_view"]/div[1]
-        print(len(img_lst))
         for l, img in enumerate(img_lst):
             src = img.get_attribute('src')
             if not src:
                 continue
-            urllib.request.urlretrieve(src, file_dir + f"{l}.png")
+            try:    
+                urllib.request.urlretrieve(src, f"{l}.png")
+                category_size += os.path.getsize(f"{l}.png") / 1024**3
+                os.remove(f"{l}.png")
+            except Exception as e:
+                category_fail_cnt += 1
 
 def move_page_product_crawling():
-    global current_page
-    page_a_lst = driver.find_elements(By.XPATH, '//*[@id="goods_list"]/div[2]/div[1]/div/div/a[not(@aria-label)]')
-    page_href_lst = list(map(lambda x: x.get_attribute('href'), page_a_lst))
-    for j, page_href in enumerate(page_href_lst):
+    global current_page, category_text
+    page_len = len(driver.find_elements(By.XPATH, '//*[@id="goods_list"]/div[2]/div[1]/div/div/a[not(@aria-label)]'))
+    for j in tqdm(range(page_len), desc=f"{category_text} crawling", position=0):
         current_page += 1
-        driver.get(page_href)
+        page_a = driver.find_elements(By.XPATH, '//*[@id="goods_list"]/div[2]/div[1]/div/div/a[not(@aria-label)]')[j]
+        page_href = page_a.get_attribute('href')
+        page_a.send_keys(Keys.ENTER)
         move_product_save(j+1)
+        driver.get(page_href)
 
 def category_product_crawling():
+    global current_page, total_page
     total_page = int(driver.find_element(By.CLASS_NAME, "totalPagingNum").get_attribute('innerText'))
-    global current_page
     current_page = 0
     while True:
         url = driver.current_url
         move_page_product_crawling()
         driver.get(url)
-        print(current_page, total_page)
         if total_page == current_page:
             break
         driver.find_element(By.CLASS_NAME, 'fa.fa-angle-right.paging-btn.btn.next').send_keys(Keys.ENTER)
@@ -71,7 +78,7 @@ options.add_experimental_option('excludeSwitches', ['enable-logging'])
 
 driver = webdriver.Chrome(
     'C:/chromedriver.exe', 
-    options=options,
+    options=options
 )
 
 musinsa_url = 'https://www.musinsa.com/app/'
@@ -83,10 +90,26 @@ a_lst = driver.find_elements(By.XPATH, '//*[@id="accordion2"]/nav/div[2 <= posit
 category_text_lst = list(map(get_category_name, a_lst))
 href_lst = list(map(lambda x: x.get_attribute('href'), a_lst))
 
+global category_size, categories_dict, category_fail_cnt
+categories_dict = {}
+
 for i, href in enumerate(href_lst): # category_len
+    category_size = 0
+    category_fail_cnt = 0
     driver.get(href)
     global category_text
     category_text = category_text_lst[i]
-    os.makedirs(category_text, exist_ok=True)
-    print(category_text)
+    print(f"start crawling {category_text}")
     category_product_crawling()
+    print(f"{category_text} size: {round(category_size, 8)} GB | download failed count: {category_fail_cnt}")
+    categories_dict[category_text] = category_size
+
+categories_name = []
+categories_size = []
+for category in categories_dict:
+    categories_name += [category]
+    categories_size += [categories_dict[category]]
+categories_name += ['total']
+categories_size += [sum(categories_size)]
+categories_size_df = pd.DataFrame({'name': categories_name, 'size': categories_size})
+categories_size_df.to_csv('./categories_size.csv', encoding='cp949')
