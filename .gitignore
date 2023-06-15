@@ -9,6 +9,16 @@ aihub-dataset/
 modeling/Human-Segmentation-PyTorch/
 modeling/SemanticGuidedHumanMatting/
 modeling/calvis/
+modeling/hbm/
+
+# chromedriver
+.tmp.driveupload
+.tmp.drivedownload
+.ipynb_checkpoints
+run_colab.ipynb
+
+# other
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
