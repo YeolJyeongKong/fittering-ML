@@ -10,6 +10,8 @@ modeling/Human-Segmentation-PyTorch/
 modeling/SemanticGuidedHumanMatting/
 modeling/calvis/
 modeling/hbm/
+modeling/STRAPS-3DHumanShapePose/
+modeling/smplpytorch/ 
 
 # chromedriver
 .tmp.driveupload
