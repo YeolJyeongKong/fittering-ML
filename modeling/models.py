@@ -55,8 +55,7 @@ class Encoder(nn.Module):
         x = self.blocks(x)
         x = x.view(-1, 8192)
         x = self.fc(x)
-        x = F.leaky_relu(self.bn(x))
-        return x # torch.Size([batch_size, 32, 16, 16])
+        return x # torch.Size([-1, 512])
     
 
 class Decoder(nn.Module):
@@ -87,8 +86,16 @@ class Decoder(nn.Module):
         x = x.view(-1, 32, 16, 16)
         x = self.blocks(x)
         x = F.sigmoid(self.conv2d(x))
-        return x
+        return x # torch.size([-1, 2, 512, 512])
 
+class AutoEncoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encoder = Encoder()
+        self.decoder = Decoder()
+    
+    def forward(self, x):
+        return self.decoder(self.encoder(x))
 
 
 
@@ -157,5 +164,8 @@ if __name__ == "__main__":
     # sample_output = model(image, height)
     # print(sample_output.shape)
 
-    model = Decoder().to(device)
-    summary(model, (512,))
+    # model = Decoder().to(device)
+    # summary(model, (512,))
+
+    model = Encoder().to(device)
+    summary(model, (2, 512, 512))
