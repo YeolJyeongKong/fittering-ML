@@ -3,13 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Tuple, Union
 
-from Data.smpl_augmentation import augment_smpl
-from Data.cam_utils import get_intrinsics_matrix, perspective_project_torch
-from Data.cam_augmentation import augment_cam_t
-from Data.nmr_renderer import NMRRenderer
-from Data.smpl_official import SMPL
-from Data.proxy_rep_augmentation import augment_proxy_representation
-from Data.label_conversions import convert_multiclass_to_binary_labels_torch, convert_2Djoints_to_gaussian_heatmaps_torch
+from data.smpl_augmentation import augment_smpl
+from data.cam_utils import get_intrinsics_matrix, perspective_project_torch
+from data.cam_augmentation import augment_cam_t
+from data.nmr_renderer import NMRRenderer
+from data.smpl_official import SMPL
+from data.proxy_rep_augmentation import augment_proxy_representation
+from data.label_conversions import convert_multiclass_to_binary_labels_torch, convert_2Djoints_to_gaussian_heatmaps_torch
 
 
 class AugmentBetasCam:
@@ -17,11 +17,11 @@ class AugmentBetasCam:
                  img_wh: int = 512,
                  betas_std_vect: Union[float, List[float]] = 1.5, 
                  K_std=1, t_xy_std=0.05, t_z_range=[-5, 5],
-                 smpl_mean_params_path: str = "/home/shin/VScodeProjects/fittering-ML/Data/additional/neutral_smpl_mean_params_6dpose.npz", 
-                 SMPL_MODEL_DIR: str = "/home/shin/VScodeProjects/fittering-ML/Data/additional/smpl", 
-                 J_REGRESSOR_EXTRA_PATH: str = "/home/shin/VScodeProjects/fittering-ML/Data/additional/J_regressor_extra.npy", 
-                 COCOPLUS_REGRESSOR_PATH: str = "/home/shin/VScodeProjects/fittering-ML/Data/additional/cocoplus_regressor.npy", 
-                 H36M_REGRESSOR_PATH: str = "/home/shin/VScodeProjects/fittering-ML/Data/additional/J_regressor_h36m.npy") -> None:
+                 smpl_mean_params_path: str = "/home/shin/VScodeProjects/fittering-ML/data/additional/neutral_smpl_mean_params_6dpose.npz", 
+                 SMPL_MODEL_DIR: str = "/home/shin/VScodeProjects/fittering-ML/data/additional/smpl", 
+                 J_REGRESSOR_EXTRA_PATH: str = "/home/shin/VScodeProjects/fittering-ML/data/additional/J_regressor_extra.npy", 
+                 COCOPLUS_REGRESSOR_PATH: str = "/home/shin/VScodeProjects/fittering-ML/data/additional/cocoplus_regressor.npy", 
+                 H36M_REGRESSOR_PATH: str = "/home/shin/VScodeProjects/fittering-ML/data/additional/J_regressor_h36m.npy") -> None:
         self.device = device
 
         if not isinstance(betas_std_vect, list):

@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from Data.augmentation import AugmentBetasCam
-from Data.preprocessing import *
+from data.augmentation import AugmentBetasCam
+from data.preprocessing import *
 
 class BinaryImageBetaDataset(Dataset):
     def __init__(self, ord_data_path, transform=None, augment=None) -> None:

@@ -13,23 +13,47 @@ from torchvision.datasets import CIFAR10
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
 
-from modeling.lightning_modules import CNNForwardModule
-from Data.datamodule import DataModule
+from lightning_modules import CNNForwardModule, AutoEncoderModule
+from datamodule import DataModule
 
 
-dm = DataModule(batch_size=8)
-dm.prepare_data()
-dm.setup()
+def train_CNNForwardModule():
+    dm = DataModule(batch_size=8)
+    dm.prepare_data()
+    dm.setup()
 
-module = CNNForwardModule()
-wandb_logger = WandbLogger(project='wandb-lightning', job_type='train')
+    module = CNNForwardModule()
+    wandb_logger = WandbLogger(project='wandb-lightning', job_type='train')
 
-trainer = pl.Trainer(max_epochs=50, 
-                     gpus=1,
-                     logger=wandb_logger,
-                     callbacks=[EarlyStopping(monitor='val_loss'), 
-                                ModelCheckpoint()])
+    trainer = pl.Trainer(max_epochs=50, 
+                        gpus=1,
+                        logger=wandb_logger,
+                        callbacks=[EarlyStopping(monitor='val_loss'), 
+                                    ModelCheckpoint()])
 
-trainer.fit(module, datamodule=dm)
-trainer.test(datamodule=dm)
-wandb.finish()
+    trainer.fit(module, datamodule=dm)
+    trainer.test(datamodule=dm)
+    wandb.finish()
+
+
+def train_AutoEncoderModule():
+    dm = DataModule(batch_size=8)
+    dm.prepare_data()
+    dm.setup()
+
+    module = AutoEncoderModule()
+    wandb_logger = WandbLogger(project='wandb-lightning', job_type='train')
+
+    trainer = pl.Trainer(max_epochs=50, 
+                        gpus=1,
+                        logger=wandb_logger,
+                        callbacks=[EarlyStopping(monitor='val_loss'), 
+                                    ModelCheckpoint()])
+
+    trainer.fit(module, datamodule=dm)
+    trainer.test(datamodule=dm)
+    wandb.finish()
+
+
+if __name__ == "__main__":
+    train_AutoEncoderModule()

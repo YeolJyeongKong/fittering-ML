@@ -12,14 +12,14 @@ from torchvision import transforms
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
 
-from Data.dataset import BinaryImageBetaDataset
-from Data.augmentation import AugmentBetasCam
-from Data.preprocessing import *
+from data.dataset import BinaryImageBetaDataset
+from data.augmentation import AugmentBetasCam
+from data.preprocessing import *
 
 
 class DataModule(pl.LightningDataModule):
     def __init__(self, batch_size,
-                 data_dir="/home/shin/VScodeProjects/fittering-ML/modeling/STRAPS-3DHumanShapePose/data/amass_up3d_3dpw_train.npz"):
+                 data_dir="/home/shin/VScodeProjects/fittering-ML/data/source/amass_up3d_3dpw_train.npz"):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size

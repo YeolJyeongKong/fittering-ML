@@ -6,7 +6,7 @@ class AccuracyBinaryImage:
 
     def metric(self, pred, label):
         pred = pred.detach().cpu().numpy()
-        label = pred.detach().cpu().numpy()
+        label = label.detach().cpu().numpy()
         score = np.mean(((pred > 0.5).astype(np.int) == label).astype(np.int))
         self.total_score += score
         self.total_cnt += 1

@@ -86,7 +86,9 @@ class AutoEncoderModule(pl.LightningModule):
 
         self.autoencoder = AutoEncoder()
 
-        self.avg_acc = AccuracyBinaryImage()
+        self.avg_acc_train = AccuracyBinaryImage()
+        self.avg_acc_val = AccuracyBinaryImage()
+        self.avg_acc_test = AccuracyBinaryImage()
 
     def forward(self, x):
         return self.autoencoder.encoder(x)
@@ -96,25 +98,28 @@ class AutoEncoderModule(pl.LightningModule):
         y = self.autoencoder(x)
         loss = F.binary_cross_entropy(y, x)
 
-        avg_acc = self.avg_acc(y, x)
+        avg_acc = self.avg_acc_train.metric(y, x)
         self.log('train_loss', loss, on_step=True, on_epoch=True, logger=True)
         self.log('train_avg_acc', avg_acc, on_step=True, on_epoch=True, logger=True)
 
         return loss
+    
+    def training_epoch_end(self, outputs: EPOCH_OUTPUT) -> None:
+        self.avg_acc_train.compute_score()
     
     def validation_step(self, batch, batch_idx):
         x = torch.cat((batch['front_image'], batch['side_image']), dim=1)
         y = self.autoencoder(x)
         loss = F.binary_cross_entropy(y, x)
 
-        avg_acc = self.avg_acc(y, x)
+        avg_acc = self.avg_acc_val.metric(y, x)
         self.log('val_loss', loss, prog_bar=True)
         # self.log('val_avg_acc', avg_acc, prog_bar=True)
 
         return loss
     
     def validation_epoch_end(self, outputs: EPOCH_OUTPUT) -> None:
-        val_avg_acc = self.avg_acc.compute_score()
+        val_avg_acc = self.avg_acc_val.compute_score()
         self.log('val_avg_acc', val_avg_acc, prog_bar=True)
     
     def test_step(self, batch, batch_idx):
@@ -127,6 +132,9 @@ class AutoEncoderModule(pl.LightningModule):
         self.log('test_avg_acc', avg_acc, prog_bar=True)
 
         return loss
+    
+    def test_epoch_end(self, outputs: EPOCH_OUTPUT) -> None:
+        self.avg_acc_test.compute_score()
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)

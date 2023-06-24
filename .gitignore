@@ -4,6 +4,7 @@
 *.jpg
 NOMO-3d-400-scans_and_tc2_measurements/
 aihub-dataset/
+data/source/
 
 # opensource
 modeling/Human-Segmentation-PyTorch/
@@ -12,6 +13,7 @@ modeling/calvis/
 modeling/hbm/
 modeling/STRAPS-3DHumanShapePose/
 modeling/smplpytorch/ 
+data/additional/smpl/
 
 # chromedriver
 .tmp.driveupload
