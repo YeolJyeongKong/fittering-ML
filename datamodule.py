@@ -18,11 +18,17 @@ from data.preprocessing import *
 
 
 class DataModule(pl.LightningDataModule):
-    def __init__(self, batch_size,
-                 data_dir="/home/shin/VScodeProjects/fittering-ML/data/source/amass_up3d_3dpw_train.npz"):
+    def __init__(self, batch_size, train_data_range=None, test_data_range=None,
+                 train_data_dir="/home/shin/VScodeProjects/fittering-ML/data/source/amass_up3d_3dpw_train.npz",
+                 test_data_dir="/home/shin/VScodeProjects/fittering-ML/data/source/up3d_3dpw_val.npz"):
         super().__init__()
-        self.data_dir = data_dir
         self.batch_size = batch_size
+        
+        self.train_data_range = train_data_range
+        self.test_data_range = test_data_range
+
+        self.train_data_dir = train_data_dir
+        self.test_data_dir = test_data_dir
 
         self.transform = transforms.Compose([
             transforms.ToPILImage(),
@@ -35,7 +41,7 @@ class DataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
-            full_dataset = BinaryImageBetaDataset(ord_data_path=self.data_dir, 
+            full_dataset = BinaryImageBetaDataset(ord_data_path=self.train_data_dir, data_range=self.train_data_range,
                                      augment=AugmentBetasCam(device=torch.device('cuda'), t_z_range=[0, 0], t_xy_std=0), 
                                      transform=self.transform)
             full_length = len(full_dataset)
@@ -43,7 +49,7 @@ class DataModule(pl.LightningDataModule):
             self.train_dataset, self.val_dataset = random_split(full_dataset, [train_len, full_length-train_len])
         
         if stage == 'test' or stage is None:
-            self.test_dataset = BinaryImageBetaDataset(ord_data_path=self.data_dir, 
+            self.test_dataset = BinaryImageBetaDataset(ord_data_path=self.test_data_dir, data_range=self.test_data_range, 
                                      augment=AugmentBetasCam(device=torch.device('cuda'), t_z_range=[0, 0], t_xy_std=0, 
                                                              K_std=0, betas_std_vect=0), 
                                      transform=self.transform)

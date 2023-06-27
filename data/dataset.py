@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
@@ -8,13 +9,16 @@ from data.augmentation import AugmentBetasCam
 from data.preprocessing import *
 
 class BinaryImageBetaDataset(Dataset):
-    def __init__(self, ord_data_path, transform=None, augment=None) -> None:
+    def __init__(self, ord_data_path, data_range=None, transform=None, augment=None) -> None:
         super().__init__()
         self.transform = transform
         self.augment = augment
 
         data = np.load(ord_data_path)
-        self.ord_shapes = data['shapes']
+        if data_range:
+            self.ord_shapes = data['shapes'][data_range[0]:data_range[1]]
+        else:
+            self.ord_shapes = data['shapes']
 
     def __len__(self):
         return len(self.ord_shapes)
@@ -38,6 +42,7 @@ class BinaryImageBetaDataset(Dataset):
                 'betas': betas[0]}
 
 if __name__ == "__main__":
+    os.chdir("/home/shin/VScodeProjects/fittering-ML")
     data_transforms = transforms.Compose([
         transforms.ToPILImage(),
         transforms.Resize((512, 512)), 
