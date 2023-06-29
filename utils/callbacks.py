@@ -38,6 +38,8 @@ class BetaPredictionLogger(Callback):
         image = torch.cat((front, side), dim=1).to(pl_module.device)
         height = height.to(pl_module.device)
         logits = pl_module(image, height)
+
+        
         
         # trainer.logger.experiment.log({
         #     "input front image": [wandb.Image(x_[0])

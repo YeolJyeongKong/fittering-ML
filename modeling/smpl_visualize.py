@@ -17,7 +17,7 @@ if __name__ == '__main__':
     smpl_layer = SMPL_Layer(
         center_idx=0,
         gender='neutral',
-        model_root='/home/shin/VScodeProjects/fittering-ML/modeling/smplpytorch/smplpytorch/native/models')
+        model_path='/home/shin/VScodeProjects/fittering-ML/data/additional/smpl/SMPL_NEUTRAL.pkl')
 
     # Generate random pose and shape parameters
     # pose_params = torch.rand(batch_size, 72) * 0.2
