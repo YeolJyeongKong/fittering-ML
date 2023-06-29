@@ -3,6 +3,8 @@ import torch
 from pytorch_lightning.callbacks import Callback
 import matplotlib.pyplot as plt
 
+from utils.visualize import Beta2Verts
+
 class ImagePredictionLogger(Callback):
     def __init__(self, val_samples):
         super().__init__()
@@ -27,9 +29,11 @@ class ImagePredictionLogger(Callback):
         })
 
 class BetaPredictionLogger(Callback):
-    def __init__(self, val_samples):
+    def __init__(self, val_samples, batch_size, device):
         super().__init__()
+        self.batch_size = batch_size
         self.val_samples = val_samples
+        self.beta2verts = Beta2Verts(batch_size=batch_size, device=device)
 
     def on_validation_epoch_end(self, trainer, pl_module):
         front, side, height, betas =\
@@ -38,6 +42,13 @@ class BetaPredictionLogger(Callback):
         image = torch.cat((front, side), dim=1).to(pl_module.device)
         height = height.to(pl_module.device)
         logits = pl_module(image, height)
+
+        target_verts = self.beta2verts.beta2verts(betas)
+        pred_verts = self.beta2verts.beta2verts(logits)
+        trainer.logger.experiment.log({
+            'target shape': [wandb.Object3D(target_vert) for target_vert in target_verts], 
+            'output shape': [wandb.Object3D(pred_vert) for pred_vert in pred_verts]
+        })
 
         
         

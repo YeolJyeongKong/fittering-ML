@@ -2,6 +2,7 @@
 *.zip
 *.png
 *.jpg
+*.obj
 NOMO-3d-400-scans_and_tc2_measurements/
 aihub-dataset/
 data/source/
