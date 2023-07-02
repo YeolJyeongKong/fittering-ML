@@ -14,11 +14,11 @@ from torch.utils.data import random_split, DataLoader
 
 from lightning_modules import CNNForwardModule, AutoEncoderModule
 from datamodule import DataModule
-from utils.callbacks import ImagePredictionLogger, BetaPredictionLogger
+# from utils.callbacks import ImagePredictionLogger, BetaPredictionLogger
 
 
 def train_CNNForwardModule():
-    batch_size = 8
+    batch_size = 16
     epochs = 50
 
     dm = DataModule(batch_size=batch_size, train_data_range=(0, 10000), test_data_range=(0, 1000))
@@ -33,10 +33,10 @@ def train_CNNForwardModule():
                         gpus=1,
                         logger=wandb_logger,
                         callbacks=[EarlyStopping(monitor='val_loss'), 
-                                    ModelCheckpoint(), 
-                                    BetaPredictionLogger(val_samples, 
-                                                         batch_size=batch_size, 
-                                                         device=module.device)])
+                                    ModelCheckpoint()])
+                                    # BetaPredictionLogger(val_samples, 
+                                    #                      batch_size=batch_size, 
+                                    #                      device=module.device)])
 
     trainer.fit(module, datamodule=dm)
     trainer.test(datamodule=dm)

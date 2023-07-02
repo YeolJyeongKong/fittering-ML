@@ -13,7 +13,6 @@ import torch.nn.functional as F
 from torchvision import transforms
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
-from torchsummary import summary
 from efficientnet_pytorch import EfficientNet as efficientnet
 from torchvision import models
 

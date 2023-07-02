@@ -24,7 +24,7 @@ if __name__ == '__main__':
     # pose_params = torch.rand(batch_size, 72) * 0.2
     # shape_params = torch.rand(batch_size, 10) * 0.03
 
-    pose_params = torch.zeros((8, 72))
+    pose_params = torch.zeros((1, 72))
     shape_params = torch.tensor(neutral['shape']).view(1, -1)
 
     # dataset = SyntheticTrainingDataset(npz_path="./STRAPS_3DHumanShapePose/data/amass_up3d_3dpw_train.npz", 
