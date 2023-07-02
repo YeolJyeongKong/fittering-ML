@@ -73,3 +73,8 @@ def front_side_pose(pose_, di):
 
     return pose_rotmats, glob_rotmats
 
+
+if __name__ == "__main__":
+    batch_size = 16
+    mean_pose = torch.zeros((batch_size, 72))
+    front_side_pose(mean_pose, di=0)

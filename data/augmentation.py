@@ -11,6 +11,7 @@ from data.renderer import renderer
 from data.smpl_official import SMPL
 from data.proxy_rep_augmentation import augment_proxy_representation
 from data.label_conversions import convert_multiclass_to_binary_labels_torch, convert_2Djoints_to_gaussian_heatmaps_torch
+from data import config
 
 import pytorch3d
 from pytorch3d.utils import ico_sphere
@@ -44,12 +45,7 @@ class AugmentBetasCam:
     def __init__(self, device: torch.device = torch.device('cpu'), 
                  img_wh: int = 512,
                  betas_std_vect: Union[float, List[float]] = 1.5, 
-                 K_std=1, t_xy_std=0.05, t_z_range=[-5, 5],
-                 smpl_mean_params_path: str = "/home/shin/VScodeProjects/fittering-ML/data/additional/neutral_smpl_mean_params_6dpose.npz", 
-                 SMPL_MODEL_DIR: str = "/home/shin/VScodeProjects/fittering-ML/data/additional/smpl", 
-                 J_REGRESSOR_EXTRA_PATH: str = "/home/shin/VScodeProjects/fittering-ML/data/additional/J_regressor_extra.npy", 
-                 COCOPLUS_REGRESSOR_PATH: str = "/home/shin/VScodeProjects/fittering-ML/data/additional/cocoplus_regressor.npy", 
-                 H36M_REGRESSOR_PATH: str = "/home/shin/VScodeProjects/fittering-ML/data/additional/J_regressor_h36m.npy") -> None:
+                 K_std=1, t_xy_std=0.05, t_z_range=[-5, 5]) -> None:
         self.device = device
 
         if not isinstance(betas_std_vect, list):
@@ -69,47 +65,26 @@ class AugmentBetasCam:
         self.t_xy_std = t_xy_std
         self.t_z_range = t_z_range
         
-        smpl_mean_params = np.load(smpl_mean_params_path)
+        smpl_mean_params = np.load(config.SMPL_MEAN_PARAMS_PATH)
         self.mean_shape = torch.from_numpy(smpl_mean_params['shape']).float().to(self.device)
 
         # smpl_model
-        self.smpl_model = SMPL(model_path=SMPL_MODEL_DIR, J_REGRESSOR_EXTRA_PATH=J_REGRESSOR_EXTRA_PATH, 
-                               COCOPLUS_REGRESSOR_PATH=COCOPLUS_REGRESSOR_PATH, 
-                               H36M_REGRESSOR_PATH=H36M_REGRESSOR_PATH, batch_size=1).to(self.device)
-        
-        
-        ##
-        self.ALL_JOINTS_TO_COCO_MAP = [24, 26, 25, 28, 27, 16, 17, 18, 19, 20, 21, 1, 2, 4, 5, 7, 8]
-        self.ALL_JOINTS_TO_H36M_MAP = list(range(73, 90))
+        self.smpl_model = SMPL(model_path=config.SMPL_MODEL_DIR, J_REGRESSOR_EXTRA_PATH=config.J_REGRESSOR_EXTRA_PATH, 
+                               COCOPLUS_REGRESSOR_PATH=config.COCOPLUS_REGRESSOR_PATH, 
+                               H36M_REGRESSOR_PATH=config.H36M_REGRESSOR_PATH, batch_size=1).to(self.device)
 
-        # Indices to get the 14 LSP joints from the 17 H36M joints
-        self.H36M_TO_J17 = [6, 5, 4, 1, 2, 3, 16, 15, 14, 11, 12, 13, 8, 10, 0, 7, 9]
-        self.H36M_TO_J14 = self.H36M_TO_J17[:14]
 
-        
-        remove_appendages = False
-        deviate_joints2D = False
-        deviate_verts2D = False
-        occlude_seg = False
-        remove_appendages_classes = [1, 2, 3, 4, 5, 6]
-        remove_appendages_probabilities = [0.1, 0.1, 0.1, 0.1, 0.05, 0.05]
-        delta_j2d_dev_range = [-8, 8]
-        delta_j2d_hip_dev_range = [-8, 8]
-        delta_verts2d_dev_range = [-0.01, 0.01]
-        occlude_probability = 0.5
-        occlude_box_dim = 48
-
-        self.proxy_rep_augment_params = {'remove_appendages': remove_appendages,
-                            'deviate_joints2D': deviate_joints2D,
-                            'deviate_verts2D': deviate_verts2D,
-                            'occlude_seg': occlude_seg,
-                            'remove_appendages_classes': remove_appendages_classes,
-                            'remove_appendages_probabilities': remove_appendages_probabilities,
-                            'delta_j2d_dev_range': delta_j2d_dev_range,
-                            'delta_j2d_hip_dev_range': delta_j2d_hip_dev_range,
-                            'delta_verts2d_dev_range': delta_verts2d_dev_range,
-                            'occlude_probability': occlude_probability,
-                            'occlude_box_dim': occlude_box_dim}
+        self.proxy_rep_augment_params = {'remove_appendages': config.remove_appendages,
+                            'deviate_joints2D': config.deviate_joints2D,
+                            'deviate_verts2D': config.deviate_verts2D,
+                            'occlude_seg': config.occlude_seg,
+                            'remove_appendages_classes': config.remove_appendages_classes,
+                            'remove_appendages_probabilities': config.remove_appendages_probabilities,
+                            'delta_j2d_dev_range': config.delta_j2d_dev_range,
+                            'delta_j2d_hip_dev_range': config.delta_j2d_hip_dev_range,
+                            'delta_verts2d_dev_range': config.delta_verts2d_dev_range,
+                            'occlude_probability': config.occlude_probability,
+                            'occlude_box_dim': config.occlude_box_dim}
         
         self.R_z_180 = torch.tensor([
             [-1., 0., 0.],
@@ -117,18 +92,18 @@ class AugmentBetasCam:
             [0., 0., 1.]
         ])
 
-        faces = np.load('/home/shin/VScodeProjects/fittering-ML/modeling/STRAPS-3DHumanShapePose/additional/smpl_faces.npy')
+        faces = np.load(config.SMPL_FACES_PATH)
         self.faces =torch.from_numpy(faces.astype(np.int)).to(self.device)
+        self.pose = torch.zeros((1, 72)).to(self.device)
 
     def aug_betas(self, betas: np.ndarray):
         assert betas.shape == (1, 10), \
             f"betas shape: {betas.shape} but expected shape: {(1, 10)}"
         
-        pose = torch.zeros((1, 72)).to(self.device)
         betas_aug, front_target_pose_rotmats, front_target_glob_rotmats, side_target_pose_rotmats, side_target_glob_rotmats = \
             augment_smpl(
                 torch.from_numpy(betas.astype(np.float32)).to(self.device),
-                pose,
+                self.pose,
                 self.mean_shape,
                 self.smpl_augment_params
             )
@@ -162,7 +137,6 @@ class AugmentBetasCam:
         cam_t = cam_t[None, :].expand(1, -1)
         cam_t = augment_cam_t(cam_t, xy_std=self.t_xy_std, delta_z_range=self.t_z_range)
 
-        # cam_front_R = (torch.eye(3) @ self.R_z_180).to(self.device)[None, :, :].expand(1, -1, -1)
         cam_front_R = torch.tensor([[[-1.,  0.,  0.],
                                      [ 0.,  1.,  0.],
                                      [ 0.,  0., -1.]]])
