@@ -2,6 +2,8 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import Callback, EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 import torchmetrics
+import warnings
+warnings.filterwarnings(action='ignore')
 
 import wandb
 
@@ -14,7 +16,7 @@ from torch.utils.data import random_split, DataLoader
 
 from lightning_modules import CNNForwardModule, AutoEncoderModule
 from datamodule import DataModule
-from utils.callbacks import ImagePredictionLogger, BetaPredictionLogger
+from utils.callbacks import ImagePredictionLogger, BetaPredictionLogger, MeasurementsLogger
 
 
 def train_CNNForwardModule():
@@ -25,7 +27,7 @@ def train_CNNForwardModule():
     dm.prepare_data()
     dm.setup()
 
-    module = CNNForwardModule()
+    module = CNNForwardModule(device=torch.device("cuda"))
     wandb_logger = WandbLogger(project='wandb-lightning', job_type='train')
     val_samples = next(iter(dm.val_dataloader()))
 
@@ -34,9 +36,12 @@ def train_CNNForwardModule():
                         logger=wandb_logger,
                         callbacks=[EarlyStopping(monitor='val_loss'), 
                                     ModelCheckpoint(),
-                                    BetaPredictionLogger(val_samples, 
-                                                         batch_size=batch_size, 
-                                                         device=module.device)])
+                                    # BetaPredictionLogger(val_samples, 
+                                    #                      batch_size=batch_size, 
+                                    #                      device=module.device), 
+                                    MeasurementsLogger(val_samples, 
+                                                       batch_size=batch_size, 
+                                                       device=module.device)])
 
     trainer.fit(module, datamodule=dm)
     trainer.test(datamodule=dm)

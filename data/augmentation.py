@@ -1,9 +1,10 @@
+import sys
 import os
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Tuple, Union
-
+sys.path.append("/home/shin/VScodeProjects/fittering-ML")
 from data.smpl_augmentation import augment_smpl
 from data.cam_utils import get_intrinsics_matrix, perspective_project_torch
 from data.cam_augmentation import augment_cam_t
@@ -11,7 +12,7 @@ from data.renderer import renderer
 from data.smpl_official import SMPL
 from data.proxy_rep_augmentation import augment_proxy_representation
 from data.label_conversions import convert_multiclass_to_binary_labels_torch, convert_2Djoints_to_gaussian_heatmaps_torch
-from data import config
+import config
 
 import pytorch3d
 from pytorch3d.utils import ico_sphere

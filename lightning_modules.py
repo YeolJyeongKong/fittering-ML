@@ -17,10 +17,10 @@ from efficientnet_pytorch import EfficientNet as efficientnet
 from torchvision import models
 
 from modeling.models import EfficientNet, AutoEncoder
-from utils.metrics import AccuracyBinaryImage
+from utils.metrics import AccuracyBinaryImage, MeasureMAE
 
 class CNNForwardModule(pl.LightningModule):
-    def __init__(self, learning_rate=2e-4):
+    def __init__(self, device, learning_rate=2e-4):
         super().__init__()
         self.learning_rate = learning_rate
 
@@ -29,6 +29,7 @@ class CNNForwardModule(pl.LightningModule):
         self.model = EfficientNet()
 
         self.mae = torchmetrics.MeanAbsoluteError()
+        self.mae_meas = MeasureMAE(device)
     
     def forward(self, image, height):
         return self.model(image, height)
@@ -41,8 +42,10 @@ class CNNForwardModule(pl.LightningModule):
         loss = F.mse_loss(logits, betas)
 
         mae = self.mae(logits, betas)
+        mae_meas = self.mae_meas(logits, betas)
         self.log('train_loss', loss, on_step=True, on_epoch=True, logger=True)
         self.log('train_mae', mae, on_step=True, on_epoch=True, logger=True)
+        self.log('train_mae_meas', mae_meas, on_step=True, on_epoch=True, logger=True)
 
         return loss
     
@@ -54,8 +57,10 @@ class CNNForwardModule(pl.LightningModule):
         loss = F.mse_loss(logits, betas)
 
         mae = self.mae(logits, betas)
+        mae_meas = self.mae_meas(logits, betas)
         self.log('val_loss', loss, prog_bar=True)
         self.log('val_mae', mae, prog_bar=True)
+        self.log('val_mae_meas', mae_meas, prog_bar=True)
 
         return loss
 
@@ -67,8 +72,10 @@ class CNNForwardModule(pl.LightningModule):
         loss = F.mse_loss(logits, betas)
 
         mae = self.mae(logits, betas)
+        mae_meas = self.mae_meas(logits, betas)
         self.log('test_loss', loss, prog_bar=True)
         self.log('test_mae', mae, prog_bar=True)
+        self.log('test_mae_meas', mae_meas, prog_bar=True)
 
         return loss
 

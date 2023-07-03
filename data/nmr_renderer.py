@@ -3,7 +3,7 @@ import torch.nn as nn
 import numpy as np
 
 # import neural_renderer as nr
-from data import config
+import config
 
 
 class NMRRenderer(nn.Module):

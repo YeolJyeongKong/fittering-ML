@@ -4,7 +4,7 @@ import numpy as np
 
 from data.smpl_augmentation import front_side_pose
 from data.smpl_official import SMPL
-from data import config
+import config
 
 # from smplpytorch.pytorch.smpl_layer import SMPL_Layer
 # from smplpytorch.display_utils import display_model

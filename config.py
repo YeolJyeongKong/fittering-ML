@@ -11,6 +11,7 @@ COCOPLUS_REGRESSOR_PATH = os.path.join(ADDITIONAL_DIR, 'cocoplus_regressor.npy')
 H36M_REGRESSOR_PATH = os.path.join(ADDITIONAL_DIR, 'J_regressor_h36m.npy')
 VERTEX_TEXTURE_PATH = os.path.join(ADDITIONAL_DIR, 'vertex_texture.npy')
 CUBE_PARTS_PATH = os.path.join(ADDITIONAL_DIR, 'cube_parts.npy')
+SEGMENTATION_PATH = os.path.join(ADDITIONAL_DIR, 'smpl_body_parts_2_faces.json')
 
 # ------------------------ Constants ------------------------
 FOCAL_LENGTH = 5000.
