@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/home/shin/VScodeProjects/fittering-ML')
 import os
 import numpy as np
 import torch
@@ -30,8 +32,7 @@ class BinaryImageBetaDataset(Dataset):
             f"shape of ord_shape: {ord_shape.shape} | expected shape:{(1, 10)}"
         
         front_image, side_image, height, betas = self.augment.render_image(ord_shape)
-        front_image = crop_true(front_image, di=0)
-        side_image = crop_true(side_image, di=1)
+
         if self.transform:
             front_image = self.transform(front_image)
             side_image = self.transform(side_image)
@@ -44,9 +45,11 @@ class BinaryImageBetaDataset(Dataset):
 if __name__ == "__main__":
     os.chdir("/home/shin/VScodeProjects/fittering-ML")
     data_transforms = transforms.Compose([
+        transforms.Lambda(crop_true),
         transforms.ToPILImage(),
         transforms.Resize((512, 512)), 
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        transforms.Lambda(convert_multiclass_to_binary_labels_torch)
     ])
     dataset = BinaryImageBetaDataset(ord_data_path="/home/shin/VScodeProjects/fittering-ML/modeling/STRAPS-3DHumanShapePose/data/amass_up3d_3dpw_train.npz", 
                                      augment=AugmentBetasCam(device=torch.device('cuda'), t_z_range=[0, 0], t_xy_std=0), 

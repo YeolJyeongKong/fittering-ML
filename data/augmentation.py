@@ -125,6 +125,7 @@ class AugmentBetasCam:
                 vertex_on_floor.view(dtype="f8"),
             )
         )
+        stature = stature * 100
         return stature.astype(np.float32)
 
     def aug_cam(self):

@@ -27,7 +27,7 @@ def train_CNNForwardModule():
     dm.prepare_data()
     dm.setup()
 
-    module = CNNForwardModule(device=torch.device("cuda"))
+    module = CNNForwardModule(device=torch.device("cuda"), learning_rate=2e-4)
     wandb_logger = WandbLogger(project='wandb-lightning', job_type='train')
     val_samples = next(iter(dm.val_dataloader()))
 
