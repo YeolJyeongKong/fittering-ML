@@ -9,7 +9,7 @@ import torchvision.transforms.functional as F
 from utils.predict import Beta2Measurements
 
 import sys
-sys.path.append("/home/shin/VScodeProjects/fittering-ML/opensrc/SemanticGuidedHumanMatting")
+# sys.path.append("/home/shin/VScodeProjects/fittering-ML/opensrc/SemanticGuidedHumanMatting")
 from opensrc.SemanticGuidedHumanMatting.model.model import HumanSegment, HumanMatting
 from opensrc.SemanticGuidedHumanMatting import utils
 from opensrc.SemanticGuidedHumanMatting import inference
@@ -50,5 +50,8 @@ def predict(front_image, side_image, height,
 if __name__ == "__main__":
     front_bin_image = Image.open("/home/shin/VScodeProjects/fittering-ML/opensrc/SemanticGuidedHumanMatting/image_data/IMG_4251.jpg")
     side_bin_image = Image.open("/home/shin/VScodeProjects/fittering-ML/opensrc/SemanticGuidedHumanMatting/image_data/IMG_4254.jpg")
-    meas = predict(front_bin_image, side_bin_image, 1.81)
+
+
+    meas = predict(front_bin_image, side_bin_image, 1.81,
+                   model_cnn_ckpt_path=)
     print(meas)
