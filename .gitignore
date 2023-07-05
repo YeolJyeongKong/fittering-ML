@@ -7,6 +7,10 @@ NOMO-3d-400-scans_and_tc2_measurements/
 aihub-dataset/
 data/source/
 
+# model weights
+*.ckpt
+*.pth
+
 # opensource
 modeling/Human-Segmentation-PyTorch/
 modeling/SemanticGuidedHumanMatting/

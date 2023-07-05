@@ -2,7 +2,7 @@ import sys
 import pandas as pd
 import torch
 sys.path.append("/home/shin/VScodeProjects/fittering-ML")
-from data.smpl_official import SMPL
+from modeling.smpl_official import SMPL
 from smplx.lbs import batch_rodrigues
 
 from utils.measure import MeasureVerts
