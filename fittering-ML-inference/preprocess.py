@@ -1,6 +1,7 @@
 from torchvision import transforms
+from utils.preprocessing import *
 
-self.transform = transforms.Compose([
+transform = transforms.Compose([
             transforms.Lambda(binary_labels_torch), 
             transforms.Lambda(crop_true),
             transforms.ToPILImage(),
