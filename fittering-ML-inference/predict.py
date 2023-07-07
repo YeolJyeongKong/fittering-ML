@@ -7,7 +7,7 @@ import torch.nn as nn
 from lightning_modules import CNNForwardModule
 import torchvision.transforms.functional as F
 
-from utils.predict import Beta2Measurements
+from custom_utils.predict import Beta2Measurements
 from preprocess import transform
 
 import sys
