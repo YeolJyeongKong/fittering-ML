@@ -49,8 +49,8 @@ def predict(front_image, side_image, height,
 
 
 if __name__ == "__main__":
-    front_bin_image = Image.open("./images/IMG_4251.jpg")
-    side_bin_image = Image.open("./images/IMG_4254.jpg")
+    front_bin_image = Image.open("./images/front.jpg")
+    side_bin_image = Image.open("./images/side.jpg")
 
 
     meas = predict(front_bin_image, side_bin_image, 1.81,
