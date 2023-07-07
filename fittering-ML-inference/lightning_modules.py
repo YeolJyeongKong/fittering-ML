@@ -17,7 +17,7 @@ from efficientnet_pytorch import EfficientNet as efficientnet
 from torchvision import models
 
 from modeling.models import EfficientNet, AutoEncoder
-from utils.metrics import AccuracyBinaryImage, MeasureMAE
+from custom_utils.metrics import AccuracyBinaryImage, MeasureMAE
 
 class CNNForwardModule(pl.LightningModule):
     def __init__(self, device, learning_rate=2e-4):

@@ -1,5 +1,5 @@
 from torchvision import transforms
-from utils.preprocessing import *
+from custom_utils.preprocessing import *
 
 transform = transforms.Compose([
             transforms.Lambda(binary_labels_torch), 
