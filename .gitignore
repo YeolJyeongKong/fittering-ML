@@ -3,6 +3,7 @@
 *.png
 *.jpg
 *.obj
+*.csv
 NOMO-3d-400-scans_and_tc2_measurements/
 aihub-dataset/
 data/source/
@@ -34,6 +35,9 @@ run_colab.ipynb
 Data/additional/
 wandb
 wandb-lightning
+aws_accesskey/
+fittering-ML-inference/aws_accesskey/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

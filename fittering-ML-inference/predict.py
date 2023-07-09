@@ -19,8 +19,6 @@ from opensrc.SemanticGuidedHumanMatting import inference
 def predict(front_image, side_image, height, 
             model_cnn_ckpt_path='/home/shin/VScodeProjects/fittering-ML/wandb-lightning/ktb7gxc2/checkpoints/epoch=19-step=10000.ckpt', 
             segmentation_ckpt_path='/home/shin/VScodeProjects/fittering-ML/opensrc/SemanticGuidedHumanMatting/pretrained/SGHM-ResNet50.pth'):
-    # model_cnn = CNNForwardModule(device=torch.device('cpu')).\
-    #     load_from_checkpoint(model_cnn_ckpt_path, map_location=torch.device('cpu'))
     model_cnn = CNNForwardModule(device=torch.device('cpu'))
     model_cnn.load_state_dict(torch.load(model_cnn_ckpt_path, map_location=torch.device('cpu')))
     model_cnn.eval()
@@ -53,7 +51,7 @@ if __name__ == "__main__":
     side_bin_image = Image.open("./images/side.jpg")
 
 
-    meas = predict(front_bin_image, side_bin_image, 1.81,
+    meas = predict(front_bin_image, side_bin_image, 181,
                    model_cnn_ckpt_path='./weights/CNNForward.pth', 
                    segmentation_ckpt_path='./weights/SGHM-ResNet50.pth')
     print(meas)
