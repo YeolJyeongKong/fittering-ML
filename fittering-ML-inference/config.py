@@ -2,7 +2,7 @@ import os
 
 # ------------------------ Paths ------------------------
 # Additional files
-ADDITIONAL_DIR = "/home/shin/VScodeProjects/fittering-ML/data/additional"
+ADDITIONAL_DIR = "./additional"
 SMPL_MODEL_DIR = os.path.join(ADDITIONAL_DIR, 'smpl')
 SMPL_FACES_PATH = os.path.join(ADDITIONAL_DIR, 'smpl_faces.npy')
 SMPL_MEAN_PARAMS_PATH = os.path.join(ADDITIONAL_DIR, 'neutral_smpl_mean_params_6dpose.npz')
