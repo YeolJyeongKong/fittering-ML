@@ -57,15 +57,17 @@ def augment_smpl(orig_shape, pose,
 
     return new_shape, front_pose_rotmats, front_glob_rotmats, side_pose_rotmats, side_glob_rotmats
 
-def front_side_pose(pose_, di):
+
+def front_side_pose(pose, di):
+    pose_ = pose.clone().detach()
     if di == 1:
         pose_[0, 41] = -70 / 180 * np.pi
         pose_[0, 44] = 70 / 180 * np.pi
 
-    pose = pose_[:, 3:]
+    pose_rotmats = pose_[:, 3:]
     global_orients = pose_[:, :3]
 
-    pose_rotmats = batch_rodrigues(pose.contiguous().view(-1, 3))
+    pose_rotmats = batch_rodrigues(pose_rotmats.contiguous().view(-1, 3))
     pose_rotmats = pose_rotmats.view(-1, 23, 3, 3)
 
     glob_rotmats = batch_rodrigues(global_orients.contiguous().view(-1, 3))

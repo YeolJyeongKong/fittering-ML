@@ -28,7 +28,9 @@ def predict(front_image, side_image, height,
     model.load_state_dict(torch.load(segmentation_ckpt_path, map_location=torch.device('cpu')))
 
     front_pred_alpha, front_pred_mask = inference.single_inference(model, front_image)
+    front_pred_alpha = (np.squeeze(front_pred_mask) >= 0.9).astype(np.float32)
     side_pred_alpha, side_pred_mask = inference.single_inference(model, side_image)
+    side_pred_alpha = (np.squeeze(side_pred_mask) >= 0.9).astype(np.float32)
 
     front_bin_image = torch.tensor(front_pred_alpha[np.newaxis, ...])
     side_bin_image = torch.tensor(side_pred_alpha[np.newaxis, ...])
@@ -47,8 +49,8 @@ def predict(front_image, side_image, height,
 
 
 if __name__ == "__main__":
-    front_bin_image = Image.open("./images/front.jpg")
-    side_bin_image = Image.open("./images/side.jpg")
+    front_bin_image = Image.open("/home/shin/Documents/image_data/front.jpg")
+    side_bin_image = Image.open("/home/shin/Documents/image_data/side.jpg")
 
 
     meas = predict(front_bin_image, side_bin_image, 181,

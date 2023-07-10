@@ -15,7 +15,6 @@ import torch
 sys.path.append("/home/shin/VScodeProjects/fittering-ML")
 import config
 from utils.measurement_definitions import *
-from data.augmentation import AugmentBetasCam
 
 
 def load_face_segmentation(segmentation_path):
@@ -471,18 +470,18 @@ class MeasureVerts:
         fig.show()
 
 
-if __name__ == "__main__":
-    betas = np.zeros((1, 10))
+# if __name__ == "__main__":
+    # betas = np.zeros((1, 10))
 
-    aug = AugmentBetasCam()
+    # aug = AugmentBetasCam()
 
-    betas_aug, front_target_pose_rotmats, front_target_glob_rotmats, side_target_pose_rotmats, side_target_glob_rotmats = \
-        aug.aug_betas(betas)
-    target_smpl_output = aug.smpl_model(body_pose=front_target_pose_rotmats,
-                                global_orient=front_target_glob_rotmats,
-                                betas=betas_aug,
-                                pose2rot=False)
-    # print(target_smpl_output.joints.shape)
-    measurements = MeasureVerts.verts2meas(target_smpl_output.vertices[0], target_smpl_output.joints[0])
-    MeasureVerts.visualize(target_smpl_output.vertices[0], target_smpl_output.joints[0], measurements)
-    print(measurements)
+    # betas_aug, front_target_pose_rotmats, front_target_glob_rotmats, side_target_pose_rotmats, side_target_glob_rotmats = \
+    #     aug.aug_betas(betas)
+    # target_smpl_output = aug.smpl_model(body_pose=front_target_pose_rotmats,
+    #                             global_orient=front_target_glob_rotmats,
+    #                             betas=betas_aug,
+    #                             pose2rot=False)
+    # # print(target_smpl_output.joints.shape)
+    # measurements = MeasureVerts.verts2meas(target_smpl_output.vertices[0], target_smpl_output.joints[0])
+    # MeasureVerts.visualize(target_smpl_output.vertices[0], target_smpl_output.joints[0], measurements)
+    # print(measurements)
