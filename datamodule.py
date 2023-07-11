@@ -8,54 +8,43 @@ import wandb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import transforms
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
 
-from data.dataset import BinaryImageBetaDataset
-from data.augmentation import AugmentBetasCam
+from torchvision import transforms
+from torchvision.transforms import ToTensor, Lambda, ToPILImage, Resize
+from torchvision.transforms import functional as F
+
+from data.dataset import BinaryImageMeasDataset
 from data.preprocessing import *
+
+import config
 
 
 class DataModule(pl.LightningDataModule):
-    def __init__(self, batch_size, train_data_range=None, test_data_range=None,
-                 train_data_dir="/home/shin/VScodeProjects/fittering-ML/data/source/amass_up3d_3dpw_train.npz",
-                 test_data_dir="/home/shin/VScodeProjects/fittering-ML/data/source/up3d_3dpw_val.npz"):
+    def __init__(self, batch_size):
         super().__init__()
         self.batch_size = batch_size
         
-        self.train_data_range = train_data_range
-        self.test_data_range = test_data_range
-
-        self.train_data_dir = train_data_dir
-        self.test_data_dir = test_data_dir
-
-        self.transform = transforms.Compose([
-            transforms.Lambda(binary_labels_torch), 
-            transforms.Lambda(crop_true),
-            transforms.ToPILImage(),
-            transforms.Resize((512, 512)), 
-            transforms.ToTensor(),
-            transforms.Lambda(convert_multiclass_to_binary_labels_torch)
-        ])
+        self.transform=transforms.Compose([
+                                        ToTensor(),
+                                        BinTensor(threshold=0.5), 
+                                        Lambda(crop_true), 
+                                        Resize((512, 512), interpolation=F.InterpolationMode.NEAREST),
+                                    ])
 
     def prepare_data(self):
         pass
 
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
-            full_dataset = BinaryImageBetaDataset(ord_data_path=self.train_data_dir, data_range=self.train_data_range,
-                                     augment=AugmentBetasCam(device=torch.device('cuda'), t_z_range=[0, 0], t_xy_std=0), 
-                                     transform=self.transform)
+            full_dataset = BinaryImageMeasDataset(data_dir=config.GEN_TRAIN_DIR, transform=self.transform)
             full_length = len(full_dataset)
             train_len = int(full_length * 0.8)
             self.train_dataset, self.val_dataset = random_split(full_dataset, [train_len, full_length-train_len])
         
         if stage == 'test' or stage is None:
-            self.test_dataset = BinaryImageBetaDataset(ord_data_path=self.test_data_dir, data_range=self.test_data_range, 
-                                     augment=AugmentBetasCam(device=torch.device('cuda'), t_z_range=[0, 0], t_xy_std=0, 
-                                                             K_std=0, betas_std_vect=0), 
-                                     transform=self.transform)
+            self.test_dataset = BinaryImageMeasDataset(data_dir=config.GEN_TEST_DIR, transform=self.transform)
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
