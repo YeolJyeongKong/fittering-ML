@@ -1,3 +1,4 @@
+import pandas as pd
 import wandb
 import torch
 from pytorch_lightning.callbacks import Callback
@@ -5,6 +6,8 @@ import matplotlib.pyplot as plt
 
 from utils.visualize import Beta2Verts
 from utils.predict import Beta2Measurements
+
+import config
 
 class ImagePredictionLogger(Callback):
     def __init__(self, val_samples):
@@ -57,19 +60,22 @@ class MeasurementsLogger(Callback):
         super().__init__()
         self.batch_size = batch_size
         self.val_samples = val_samples
-        self.beta2meas = Beta2Measurements(device)
 
     def on_validation_epoch_end(self, trainer, pl_module):
-        front, side, height, betas =\
-              self.val_samples['front_image'], self.val_samples['side_image'], \
-                self.val_samples['height'], self.val_samples['betas']
-        image = torch.cat((front, side), dim=1).to(pl_module.device)
+        front, side, height, meas =\
+              self.val_samples['front'], self.val_samples['side'], \
+                self.val_samples['height'], self.val_samples['meas']
+        front, side = front.to(pl_module.device), side.to(pl_module.device)
         height = height.to(pl_module.device)
-        logits = pl_module(image, height)
+        logits = pl_module(front, side, height)
 
-        target_meas = self.beta2meas.predict(betas)
-        pred_meas = self.beta2meas.predict(logits)
+        pred_meas = pd.DataFrame(logits.cpu().numpy())
+        pred_meas.columns = config.MEASUREMENTS_ORDER
+
+        target_meas = pd.DataFrame(meas.cpu().numpy())
+        target_meas.columns = config.MEASUREMENTS_ORDER
+
         trainer.logger.experiment.log({
-            'target measurements': wandb.Table(dataframe=target_meas), 
-            'output measurements': wandb.Table(dataframe=pred_meas)
+            'predict measurements': wandb.Table(dataframe=pred_meas), 
+            'target measurements': wandb.Table(dataframe=target_meas)
         })

@@ -10,17 +10,12 @@ import wandb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import transforms
-from torch.utils.data import random_split
-from torch.utils.data import DataLoader
-from efficientnet_pytorch import EfficientNet as efficientnet
-from torchvision import models
 
 from modeling.models import EfficientNet, AutoEncoder
 from utils.metrics import AccuracyBinaryImage, MeasureMAE
 
 class CNNForwardModule(pl.LightningModule):
-    def __init__(self, device, learning_rate=2e-4):
+    def __init__(self, learning_rate=2e-4):
         super().__init__()
         self.learning_rate = learning_rate
 
@@ -30,8 +25,8 @@ class CNNForwardModule(pl.LightningModule):
 
         self.mae = torchmetrics.MeanAbsoluteError()
     
-    def forward(self, image, height):
-        return self.model(image, height)
+    def forward(self, front, side, height):
+        return self.model(front, side, height)
     
     def training_step(self, batch, batch_idx):
         front, side, height, meas =\
