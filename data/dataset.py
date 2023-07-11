@@ -44,8 +44,8 @@ class BinaryImageMeasDataset(Dataset):
             front = self.transform(front_arr)
             side = self.transform(side_arr)
 
-        return {'front': front, 
-                'side': side, 
+        return {'front': front,
+                'side': side,
                 'height': height, 
                 'meas': measurement_lst}
 

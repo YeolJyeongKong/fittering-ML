@@ -1,33 +1,32 @@
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks import Callback, EarlyStopping, ModelCheckpoint
-from pytorch_lightning.loggers import WandbLogger
-import torchmetrics
-
 import wandb
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import transforms
-from torch.utils.data import random_split
-from torch.utils.data import DataLoader
+
 from torchsummary import summary
 from efficientnet_pytorch import EfficientNet as efficientnet
-from torchvision import models
 
 class EfficientNet(nn.Module):
     def __init__(self):
         super(EfficientNet, self).__init__()
         self.net = efficientnet.from_name('efficientnet-b0')
         self.net._change_in_channels(2)
-        self.net._fc = nn.Linear(self.net._fc.in_features, 50)
-        self.bn = nn.BatchNorm1d(51)
-        self.fc2 = nn.Linear(51, 10)
+        self.net._fc = nn.Linear(self.net._fc.in_features, 100)
+        self.bn1 = nn.BatchNorm1d(100)
+        self.fc1 = nn.Linear(100, 10)
+        self.bn2 = nn.BatchNorm1d(11)
+        self.fc2 = nn.Linear(11, 8)
 
-    def forward(self, image, height):
+    def forward(self, front, side, height):
+        image = torch.cat([front, side], dim=1)
         x1 = self.net(image)
+        x1 = F.leaky_relu(self.bn1(x1))
+
+        x1 = self.fc1(x1)
+
         x = torch.cat((x1, height.view(-1, 1)), 1)
-        x = F.leaky_relu(self.bn(x))
+        x = F.leaky_relu(self.bn2(x))
         x = self.fc2(x)
         return x
 
@@ -157,7 +156,7 @@ class AutoEncoder(nn.Module):
     
 
 if __name__ == "__main__":
-    device = torch.device('cuda')
+    # device = torch.device('cuda')
     # model = EfficientNet().to(device)
     # image = torch.randn((10, 2, 512, 512)).to(device)
     # height = torch.randn((10, 1)).to(device)
@@ -166,6 +165,14 @@ if __name__ == "__main__":
 
     # model = Decoder().to(device)
     # summary(model, (512,))
+    import sys
+    sys.path.append("/home/shin/VScodeProjects/fittering-ML")
+    from datamodule import DataModule
+    dm = DataModule(batch_size=16)
+    dm.prepare_data()
+    dm.setup()
+    val_samples = next(iter(dm.val_dataloader()))
 
-    model = Encoder().to(device)
-    summary(model, (2, 512, 512))
+    model = EfficientNet()
+    output = model(val_samples['front'], val_samples['side'], val_samples['height'])
+    print()
