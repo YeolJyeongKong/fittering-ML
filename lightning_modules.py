@@ -29,53 +29,46 @@ class CNNForwardModule(pl.LightningModule):
         self.model = EfficientNet()
 
         self.mae = torchmetrics.MeanAbsoluteError()
-        self.mae_meas = MeasureMAE(device)
     
     def forward(self, image, height):
         return self.model(image, height)
     
     def training_step(self, batch, batch_idx):
-        front, side, height, betas =\
-              batch['front_image'], batch['side_image'], batch['height'], batch['betas']
-        image = torch.cat((front, side), dim=1)
-        logits = self(image, height)
-        loss = F.mse_loss(logits, betas)
+        front, side, height, meas =\
+              batch['front'], batch['side'], batch['height'], batch['meas']
+        logits = self(front, side, height)
+        loss = F.mse_loss(logits, meas)
 
-        mae = self.mae(logits, betas)
-        mae_meas = self.mae_meas(logits, betas)
+        mae = self.mae(logits, meas)
+
         self.log('train_loss', loss, on_step=True, on_epoch=True, logger=True)
         self.log('train_mae', mae, on_step=True, on_epoch=True, logger=True)
-        self.log('train_mae_meas', mae_meas, on_step=True, on_epoch=True, logger=True)
 
         return loss
     
     def validation_step(self, batch, batch_idx):
-        front, side, height, betas =\
-              batch['front_image'], batch['side_image'], batch['height'], batch['betas']
-        image = torch.cat((front, side), dim=1)
-        logits = self(image, height)
-        loss = F.mse_loss(logits, betas)
+        front, side, height, meas =\
+              batch['front'], batch['side'], batch['height'], batch['meas']
+        logits = self(front, side, height)
+        loss = F.mse_loss(logits, meas)
 
-        mae = self.mae(logits, betas)
-        mae_meas = self.mae_meas(logits, betas)
+        mae = self.mae(logits, meas)
+
         self.log('val_loss', loss, prog_bar=True)
         self.log('val_mae', mae, prog_bar=True)
-        self.log('val_mae_meas', mae_meas, prog_bar=True)
 
         return loss
 
     def test_step(self, batch, batch_idx):
-        front, side, height, betas =\
-              batch['front_image'], batch['side_image'], batch['height'], batch['betas']
-        image = torch.cat((front, side), dim=1)
-        logits = self(image, height)
-        loss = F.mse_loss(logits, betas)
+        front, side, height, meas =\
+              batch['front'], batch['side'], batch['height'], batch['meas']
+        logits = self(front, side, height)
+        loss = F.mse_loss(logits, meas)
 
-        mae = self.mae(logits, betas)
-        mae_meas = self.mae_meas(logits, betas)
+        mae = self.mae(logits, meas)
+        
         self.log('test_loss', loss, prog_bar=True)
         self.log('test_mae', mae, prog_bar=True)
-        self.log('test_mae_meas', mae_meas, prog_bar=True)
 
         return loss
 
