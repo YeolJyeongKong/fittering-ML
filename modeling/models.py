@@ -1,11 +1,9 @@
-import wandb
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from torchsummary import summary
 from efficientnet_pytorch import EfficientNet as efficientnet
+
+from torchviz import make_dot
 
 class EfficientNet(nn.Module):
     def __init__(self):
@@ -175,4 +173,5 @@ if __name__ == "__main__":
 
     model = EfficientNet()
     output = model(val_samples['front'], val_samples['side'], val_samples['height'])
-    print()
+    
+    make_dot(output.mean(), params=dict(model.named_parameters()), show_attrs=True, show_saved=True)
