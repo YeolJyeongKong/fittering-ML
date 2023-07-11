@@ -34,17 +34,18 @@ def convert_multiclass_to_binary_labels_torch(multiclass_labels):
 
     return binary_labels
 
-def binary_labels_torch(multiclass_labels):
-    """
-    Converts multiclass segmentation labels into a binary mask.
-    """
-    binary_labels = torch.zeros_like(multiclass_labels)
-    binary_labels[multiclass_labels > 0.5] = 1
 
-    return binary_labels
+class BinTensor(object):
+    def __init__(self, threshold=0.5):
+        self.threshold = threshold
 
-def PILfromtensor(tensor: torch.Tensor):
-    return tensor.detach().cpu().numpy()
+    def __call__(self, tensor):
+        """
+        Converts multiclass segmentation labels into a binary mask.
+        """
+        if tensor.ndim == 2:
+            tensor = torch.unsqueeze(tensor, 0)
+        bin_tensor = torch.zeros_like(tensor)
+        bin_tensor[tensor > self.threshold] = 1
 
-def totensor(array: np.ndarray, device=torch.device('cuda')):
-    return torch.from_numpy(array).float().to(device)
+        return bin_tensor

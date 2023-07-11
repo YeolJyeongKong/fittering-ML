@@ -12,6 +12,8 @@ from data.renderer import renderer
 from data.smpl_official import SMPL
 from data.proxy_rep_augmentation import augment_proxy_representation
 from data.label_conversions import convert_multiclass_to_binary_labels_torch, convert_2Djoints_to_gaussian_heatmaps_torch
+
+from utils.measure import MeasureVerts
 import config
 
 import pytorch3d
@@ -46,7 +48,7 @@ class AugmentBetasCam:
     def __init__(self, device: torch.device = torch.device('cpu'), 
                  img_wh: int = 512,
                  betas_std_vect: Union[float, List[float]] = 1.5, 
-                 K_std=1, t_xy_std=0.05, t_z_range=[-5, 5]) -> None:
+                 K_std=1, t_xy_std=0.01, t_z_range=[-1, 1], theta_std=3) -> None:
         self.device = device
 
         if not isinstance(betas_std_vect, list):
@@ -65,6 +67,7 @@ class AugmentBetasCam:
         self.K_std = K_std
         self.t_xy_std = t_xy_std
         self.t_z_range = t_z_range
+        self.theta_std = theta_std
         
         smpl_mean_params = np.load(config.SMPL_MEAN_PARAMS_PATH)
         self.mean_shape = torch.from_numpy(smpl_mean_params['shape']).float().to(self.device)
@@ -87,11 +90,14 @@ class AugmentBetasCam:
                             'occlude_probability': config.occlude_probability,
                             'occlude_box_dim': config.occlude_box_dim}
         
-        self.R_z_180 = torch.tensor([
-            [-1., 0., 0.],
-            [0., -1., 0.],
-            [0., 0., 1.]
-        ])
+
+        self.cam_front_R = np.array([[-1.,  0.,  0.],
+                                      [ 0.,  1.,  0.],
+                                      [ 0.,  0., -1.]])
+        
+        self.cam_side_R = np.array([[0.,  0.,  1.],
+                                     [0.,  1.,  0.],
+                                     [-1., 0.,  0.]])
 
         faces = np.load(config.SMPL_FACES_PATH)
         self.faces =torch.from_numpy(faces.astype(np.int)).to(self.device)
@@ -127,6 +133,14 @@ class AugmentBetasCam:
         )
         stature = stature * 100
         return stature.astype(np.float32)
+    
+    @staticmethod
+    def rotate_matrix(theta):
+        theta = np.pi / 180. * theta
+        R = np.array([[np.cos(theta), -np.sin(theta), 0.], 
+                      [np.sin(theta), np.cos(theta),  0.], 
+                      [0.,            0.,            1.]])
+        return R
 
     def aug_cam(self):
         focal_length = 5000. + np.random.randn() * self.K_std
@@ -134,18 +148,15 @@ class AugmentBetasCam:
         cam_K = torch.from_numpy(cam_K.astype(np.float32)).to(self.device)
         cam_K = cam_K[None, :, :].expand(1, -1, -1)
 
-        cam_t = np.array([0., 0, 2.5])
+        cam_t = np.array([0., 0.3, 2.5])
         cam_t = torch.from_numpy(cam_t).float().to(self.device)
         cam_t = cam_t[None, :].expand(1, -1)
         cam_t = augment_cam_t(cam_t, xy_std=self.t_xy_std, delta_z_range=self.t_z_range)
 
-        cam_front_R = torch.tensor([[[-1.,  0.,  0.],
-                                     [ 0.,  1.,  0.],
-                                     [ 0.,  0., -1.]]])
+        theta = np.random.randn() * self.theta_std
+        cam_front_R = torch.tensor(self.cam_front_R @ AugmentBetasCam.rotate_matrix(theta)[np.newaxis, ...])
         
-        cam_side_R = torch.tensor([[[0.,  0.,  1.],
-                                    [0.,  1.,  0.],
-                                    [-1., 0.,  0.]]])
+        cam_side_R = torch.tensor(self.cam_side_R @ AugmentBetasCam.rotate_matrix(theta)[np.newaxis, ...])
         return cam_K, cam_t, (cam_front_R, cam_side_R)
     
     def render_image_(self, betas_rotats, cam_params, di):
@@ -161,19 +172,33 @@ class AugmentBetasCam:
         target_vertices = target_smpl_output.vertices # 1, 6890, 3
         silhoute_image = renderer(target_vertices, self.faces, cam_R, cam_t, self.device)
 
-        return silhoute_image, target_vertices
+        return silhoute_image, target_vertices[0], target_smpl_output.joints[0]
 
     def render_image(self, betas):
         cam_K, cam_t, cam_R = self.aug_cam()
 
         betas_aug, front_target_pose_rotmats, front_target_glob_rotmats, side_target_pose_rotmats, side_target_glob_rotmats = self.aug_betas(betas)
-        front_image, vertices = self.render_image_((betas_aug, front_target_pose_rotmats, front_target_glob_rotmats), 
+        front_image, vertices, joints = self.render_image_((betas_aug, front_target_pose_rotmats, front_target_glob_rotmats), 
                            (cam_K, cam_t, cam_R), di=0)
         
-        side_image, _ = self.render_image_((betas_aug, side_target_pose_rotmats, side_target_glob_rotmats), 
+        side_image, _, _ = self.render_image_((betas_aug, side_target_pose_rotmats, side_target_glob_rotmats), 
                            (cam_K, cam_t, cam_R), di=1)
-        height = self.get_height(vertices[0])
+        height = self.get_height(vertices)
         return front_image, side_image, height, betas_aug
+
+    def generate(self, betas):
+        cam_K, cam_t, cam_R = self.aug_cam()
+
+        betas_aug, front_target_pose_rotmats, front_target_glob_rotmats, side_target_pose_rotmats, side_target_glob_rotmats = self.aug_betas(betas)
+        front_image, vertices, joints = self.render_image_((betas_aug, front_target_pose_rotmats, front_target_glob_rotmats), 
+                           (cam_K, cam_t, cam_R), di=0)
+        
+        side_image, _, _ = self.render_image_((betas_aug, side_target_pose_rotmats, side_target_glob_rotmats), 
+                           (cam_K, cam_t, cam_R), di=1)
+
+        measurements = MeasureVerts.verts2meas(vertices, joints)
+        return front_image, side_image, measurements
+        
 
 if __name__ == "__main__":
     data = np.load("/home/shin/VScodeProjects/fittering-ML/modeling/STRAPS-3DHumanShapePose/data/amass_up3d_3dpw_train.npz")

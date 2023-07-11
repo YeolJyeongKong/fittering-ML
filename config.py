@@ -13,6 +13,28 @@ VERTEX_TEXTURE_PATH = os.path.join(ADDITIONAL_DIR, 'vertex_texture.npy')
 CUBE_PARTS_PATH = os.path.join(ADDITIONAL_DIR, 'cube_parts.npy')
 SEGMENTATION_PATH = os.path.join(ADDITIONAL_DIR, 'smpl_body_parts_2_faces.json')
 
+# data dir
+DATA_DIR = '/home/shin/VScodeProjects/fittering-ML/data/source'
+# ordinary data path
+ORD_DATA_PATH = os.path.join(DATA_DIR, 'amass_up3d_3dpw_train.npz')
+# generated data path
+GEN_DATA_DIR = os.path.join(DATA_DIR, 'gen_data')
+GEN_TRAIN_DIR = os.path.join(GEN_DATA_DIR, 'train')
+GEN_TEST_DIR = os.path.join(GEN_DATA_DIR, 'test')
+
+
+# ------------------------ label order ------------------------
+MEASUREMENTS_ORDER = [
+        "height",
+        "chest circumference",
+        "waist circumference",
+        "hip circumference",
+        "thigh left circumference",
+        "arm left length",
+        "inside leg height",
+        "shoulder breadth",
+]
+
 # ------------------------ Constants ------------------------
 FOCAL_LENGTH = 5000.
 REGRESSOR_IMG_WH = 512

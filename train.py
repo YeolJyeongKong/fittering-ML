@@ -23,22 +23,19 @@ def train_CNNForwardModule():
     batch_size = 16
     epochs = 50
 
-    dm = DataModule(batch_size=batch_size, train_data_range=(0, 10000), test_data_range=(0, 1000))
+    dm = DataModule(batch_size=batch_size)
     dm.prepare_data()
     dm.setup()
 
-    module = CNNForwardModule(device=torch.device("cuda"), learning_rate=2e-4)
+    module = CNNForwardModule(learning_rate=2e-4)
     wandb_logger = WandbLogger(project='wandb-lightning', job_type='train')
     val_samples = next(iter(dm.val_dataloader()))
 
     trainer = pl.Trainer(max_epochs=epochs, 
                         gpus=1,
                         logger=wandb_logger,
-                        callbacks=[EarlyStopping(monitor='val_loss'), 
+                        callbacks=[EarlyStopping(monitor='val_mae'), 
                                     ModelCheckpoint(),
-                                    # BetaPredictionLogger(val_samples, 
-                                    #                      batch_size=batch_size, 
-                                    #                      device=module.device), 
                                     MeasurementsLogger(val_samples, 
                                                        batch_size=batch_size, 
                                                        device=module.device)])
