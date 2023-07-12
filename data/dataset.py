@@ -58,4 +58,3 @@ if __name__ == "__main__":
                                         Resize((512, 512), interpolation=F.InterpolationMode.NEAREST),
                                     ]))
     data_dict = dataset.__getitem__(0)
-    print()

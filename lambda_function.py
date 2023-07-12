@@ -13,12 +13,10 @@ def handler(event, context):
 	front_image = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=FRONT_FILE_NAME)['Body'])
 	side_image = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=SIDE_FILE_NAME)['Body'])
 	height = event['body-json']['height']
-	meas = predict(front_image, side_image, height, 
-		model_cnn_ckpt_path='./weights/CNNForward.pth',
-               segmentation_ckpt_path='./weights/SGHM-ResNet50.pth')
+	meas = predict(front_image, side_image, height)
 	return {
 		'statusCode': 200,
-		'body': str(meas)
+		'body': meas
 	}
 
 if __name__ == "__main__":
