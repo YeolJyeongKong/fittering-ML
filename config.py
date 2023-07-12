@@ -2,7 +2,7 @@ import os
 
 # ------------------------ Paths ------------------------
 # Additional files
-ADDITIONAL_DIR = "/home/shin/VScodeProjects/fittering-ML/data/additional"
+ADDITIONAL_DIR = "./data/additional"
 SMPL_MODEL_DIR = os.path.join(ADDITIONAL_DIR, 'smpl')
 SMPL_FACES_PATH = os.path.join(ADDITIONAL_DIR, 'smpl_faces.npy')
 SMPL_MEAN_PARAMS_PATH = os.path.join(ADDITIONAL_DIR, 'neutral_smpl_mean_params_6dpose.npz')
@@ -13,8 +13,13 @@ VERTEX_TEXTURE_PATH = os.path.join(ADDITIONAL_DIR, 'vertex_texture.npy')
 CUBE_PARTS_PATH = os.path.join(ADDITIONAL_DIR, 'cube_parts.npy')
 SEGMENTATION_PATH = os.path.join(ADDITIONAL_DIR, 'smpl_body_parts_2_faces.json')
 
+# model weights
+MODEL_WEIGHTS_DIR = "./model_weights"
+CNNMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, 'CNNForwardNet.ckpt')
+SEGMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, 'SGHM-ResNet50.pth')
+
 # data dir
-DATA_DIR = '/home/shin/VScodeProjects/fittering-ML/data/source'
+DATA_DIR = './data/source'
 # ordinary data path
 ORD_DATA_PATH = os.path.join(DATA_DIR, 'amass_up3d_3dpw_train.npz')
 # generated data path

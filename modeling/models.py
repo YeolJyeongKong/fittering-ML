@@ -3,8 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from efficientnet_pytorch import EfficientNet as efficientnet
 
-from torchviz import make_dot
-
 class EfficientNet(nn.Module):
     def __init__(self):
         super(EfficientNet, self).__init__()
@@ -153,7 +151,7 @@ class AutoEncoder(nn.Module):
 #         return optimizer
     
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # device = torch.device('cuda')
     # model = EfficientNet().to(device)
     # image = torch.randn((10, 2, 512, 512)).to(device)
@@ -163,15 +161,15 @@ if __name__ == "__main__":
 
     # model = Decoder().to(device)
     # summary(model, (512,))
-    import sys
-    sys.path.append("/home/shin/VScodeProjects/fittering-ML")
-    from datamodule import DataModule
-    dm = DataModule(batch_size=16)
-    dm.prepare_data()
-    dm.setup()
-    val_samples = next(iter(dm.val_dataloader()))
+    # import sys
+    # sys.path.append("/home/shin/VScodeProjects/fittering-ML")
+    # from datamodule import DataModule
+    # dm = DataModule(batch_size=16)
+    # dm.prepare_data()
+    # dm.setup()
+    # val_samples = next(iter(dm.val_dataloader()))
 
-    model = EfficientNet()
-    output = model(val_samples['front'], val_samples['side'], val_samples['height'])
+    # model = EfficientNet()
+    # output = model(val_samples['front'], val_samples['side'], val_samples['height'])
     
-    make_dot(output.mean(), params=dict(model.named_parameters()), show_attrs=True, show_saved=True)
+    # make_dot(output.mean(), params=dict(model.named_parameters()), show_attrs=True, show_saved=True)
