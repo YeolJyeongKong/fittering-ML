@@ -16,11 +16,12 @@ from torch.utils.data import random_split, DataLoader
 
 from lightning_modules import CNNForwardModule, AutoEncoderModule
 from datamodule import DataModule
-from utils.callbacks import ImagePredictionLogger, BetaPredictionLogger, MeasurementsLogger
+from utils.callbacks import ImagePredictionLogger, BetaPredictionLogger, MeasurementsLogger, RealDataPredictLogger
 
+import config
 
 def train_CNNForwardModule():
-    batch_size = 16
+    batch_size = 8
     epochs = 50
 
     dm = DataModule(batch_size=batch_size)
@@ -38,7 +39,8 @@ def train_CNNForwardModule():
                                     ModelCheckpoint(),
                                     MeasurementsLogger(val_samples, 
                                                        batch_size=batch_size, 
-                                                       device=module.device)])
+                                                       device=module.device), 
+                                    RealDataPredictLogger(real_user_dir=config.REAL_USER_DIR)])
 
     trainer.fit(module, datamodule=dm)
     trainer.test(datamodule=dm)
@@ -49,7 +51,7 @@ def train_AutoEncoderModule():
     batch_size = 8
     epochs = 50
 
-    dm = DataModule(batch_size=batch_size, train_data_range=(0, 10000), test_data_range=(0, 1000))
+    dm = DataModule(batch_size=batch_size)
     dm.prepare_data()
     dm.setup()
 
@@ -71,5 +73,5 @@ def train_AutoEncoderModule():
 
 
 if __name__ == "__main__":
-    # train_AutoEncoderModule()
-    train_CNNForwardModule()
+    train_AutoEncoderModule()
+    # train_CNNForwardModule()

@@ -48,6 +48,7 @@ class AugmentBetasCam:
     def __init__(self, device: torch.device = torch.device('cpu'), 
                  img_wh: int = 512,
                  betas_std_vect: Union[float, List[float]] = 1.5, 
+                 pose_std = 0.1,
                  K_std=1, t_xy_std=0.01, t_z_range=[-1, 1], theta_std=3) -> None:
         self.device = device
 
@@ -60,6 +61,8 @@ class AugmentBetasCam:
                             'delta_betas_distribution': 'normal',
                             'delta_betas_std_vector': delta_betas_std_vector,
                             'delta_betas_range': [0, 0]}
+        self.pose_std = pose_std
+        self.pose = torch.zeros((1, 72)).to(self.device)
 
         self.img_wh = img_wh
 
@@ -101,16 +104,16 @@ class AugmentBetasCam:
 
         faces = np.load(config.SMPL_FACES_PATH)
         self.faces =torch.from_numpy(faces.astype(np.int)).to(self.device)
-        self.pose = torch.zeros((1, 72)).to(self.device)
 
     def aug_betas(self, betas: np.ndarray):
         assert betas.shape == (1, 10), \
             f"betas shape: {betas.shape} but expected shape: {(1, 10)}"
         
+        pose = self.pose + torch.randn(1, 72).to(self.device) * self.pose_std
         betas_aug, front_target_pose_rotmats, front_target_glob_rotmats, side_target_pose_rotmats, side_target_glob_rotmats = \
             augment_smpl(
                 torch.from_numpy(betas.astype(np.float32)).to(self.device),
-                self.pose,
+                pose,
                 self.mean_shape,
                 self.smpl_augment_params
             )

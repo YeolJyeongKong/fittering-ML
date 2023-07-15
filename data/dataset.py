@@ -47,7 +47,8 @@ class BinaryImageMeasDataset(Dataset):
         return {'front': front,
                 'side': side,
                 'height': height, 
-                'meas': measurement_lst}
+                'meas': measurement_lst, 
+                'idx': json_data['idx']}
 
 if __name__ == "__main__":
     dataset = BinaryImageMeasDataset(data_dir=config.GEN_TRAIN_DIR, 

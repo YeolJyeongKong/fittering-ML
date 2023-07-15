@@ -37,6 +37,7 @@ wandb
 wandb-lightning
 aws_accesskey/
 fittering-ML-inference/aws_accesskey/
+practice.ipynb
 
 
 # Byte-compiled / optimized / DLL files
