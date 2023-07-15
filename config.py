@@ -27,6 +27,11 @@ GEN_DATA_DIR = os.path.join(DATA_DIR, 'gen_data')
 GEN_TRAIN_DIR = os.path.join(GEN_DATA_DIR, 'train')
 GEN_TEST_DIR = os.path.join(GEN_DATA_DIR, 'test')
 
+# real user dir
+REAL_USER_DIR = "/home/shin/Documents/real_user"
+# secret data dir
+SECRET_USER_DIR = "/home/shin/Documents/secret_data"
+
 
 # ------------------------ label order ------------------------
 MEASUREMENTS_ORDER = [

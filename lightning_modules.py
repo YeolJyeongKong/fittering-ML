@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from modeling.models import EfficientNet, AutoEncoder
+from modeling.models import EfficientNet, AutoEncoder, EfficientNetv2, SimpleNet
 from utils.metrics import AccuracyBinaryImage, MeasureMAE
 
 class CNNForwardModule(pl.LightningModule):
@@ -21,7 +21,7 @@ class CNNForwardModule(pl.LightningModule):
 
         self.save_hyperparameters()
         
-        self.model = EfficientNet()
+        self.model = EfficientNetv2()
 
         self.mae = torchmetrics.MeanAbsoluteError()
     
@@ -88,7 +88,7 @@ class AutoEncoderModule(pl.LightningModule):
         return self.autoencoder.encoder(x)
     
     def training_step(self, batch, batch_idx):
-        x = torch.cat((batch['front_image'], batch['side_image']), dim=1)
+        x = batch['front']
         y = self.autoencoder(x)
         loss = F.binary_cross_entropy(y, x)
 
@@ -102,13 +102,12 @@ class AutoEncoderModule(pl.LightningModule):
         self.avg_acc_train.compute_score()
     
     def validation_step(self, batch, batch_idx):
-        x = torch.cat((batch['front_image'], batch['side_image']), dim=1)
+        x = batch['front']
         y = self.autoencoder(x)
         loss = F.binary_cross_entropy(y, x)
 
         avg_acc = self.avg_acc_val.metric(y, x)
         self.log('val_loss', loss, prog_bar=True)
-        # self.log('val_avg_acc', avg_acc, prog_bar=True)
 
         return loss
     
@@ -117,7 +116,7 @@ class AutoEncoderModule(pl.LightningModule):
         self.log('val_avg_acc', val_avg_acc, prog_bar=True)
     
     def test_step(self, batch, batch_idx):
-        x = torch.cat((batch['front_image'], batch['side_image']), dim=1)
+        x = batch['front']
         y = self.autoencoder(x)
         loss = F.binary_cross_entropy(y, x)
 

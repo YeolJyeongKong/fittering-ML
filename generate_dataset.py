@@ -9,11 +9,11 @@ from data.augmentation import AugmentBetasCam
 
 
 class GenDataset:
-    def __init__(self, data_size=1e5, train_ratio=0.8, ord_data_path=config.ORD_DATA_PATH, 
-                 gen_data_dir=config.GEN_DATA_DIR, 
+    def __init__(self, gen_param, data_size=1e5, train_ratio=0.8, 
+                 ord_data_path=config.ORD_DATA_PATH, 
+                 gen_data_dir=config.GEN_DATA_DIR,
                  device=torch.device('cuda')):
-        self.augment = AugmentBetasCam(device=torch.device('cuda'), 
-                                       betas_std_vect=1.5, K_std=1, t_xy_std=0.1, t_z_range=[-0.5, 0.5], theta_std=3)
+        self.augment = AugmentBetasCam(device=torch.device('cuda'), **gen_params)
         ord_data = np.load(ord_data_path)['shapes']
         ord_data = ord_data[np.random.choice(ord_data.shape[0], size=int(data_size), replace=False)]
         split_idx = int(data_size * train_ratio)
@@ -70,5 +70,13 @@ class GenDataset:
 
 
 if __name__ == "__main__":
-    gen_dataset = GenDataset()
+    gen_params = {
+           'pose_std': 0.01,
+            'betas_std_vect': 2.0, 
+            'K_std': 1, 
+            't_xy_std': 0.1, 
+            't_z_range': [-0.5, 0.5], 
+            'theta_std': 3,
+    }
+    gen_dataset = GenDataset(gen_params)
     gen_dataset.generate()

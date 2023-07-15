@@ -1,4 +1,5 @@
 from typing import Any
+import cv2
 import torch
 import torchvision.transforms.functional as F 
 import numpy as np
@@ -33,6 +34,14 @@ def convert_multiclass_to_binary_labels_torch(multiclass_labels):
     binary_labels[multiclass_labels != 0] = 1
 
     return binary_labels
+
+
+def morphology(image):
+    image = image.numpy()[0]
+    k = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
+    image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, k)
+    return torch.tensor(image[np.newaxis, ...])
+
 
 
 class BinTensor(object):
