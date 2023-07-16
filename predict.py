@@ -136,7 +136,7 @@ def predict_time(front_image, side_image, height):
 if __name__ == "__main__":
     front_bin_image = Image.open(os.path.join(config.SECRET_USER_DIR, '0', "front.jpg"))
     side_bin_image = Image.open(os.path.join(config.SECRET_USER_DIR, '0', "front.jpg"))
-    inf = Inference()
+    inf = Inference(cnnmodel_path='./model_weights/epoch=19-step=160000.ckpt')
     meas = inf.predict(front_bin_image, side_bin_image, 181)
     # print(time.time() - t)
     print(json.loads(meas))

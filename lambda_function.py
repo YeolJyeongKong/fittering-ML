@@ -10,7 +10,7 @@ FRONT_FILE_NAME = "front.jpg"
 SIDE_FILE_NAME = "side.jpg"
 s3 = boto3.client('s3')
 
-inference = Inference()
+inference = Inference(cnnmodel_path='./model_weights/epoch=19-step=160000.ckpt')
 
 # def handler(event, context):
 # 	t1 = time.time()

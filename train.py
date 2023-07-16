@@ -48,7 +48,7 @@ def train_CNNForwardModule():
 
 
 def train_AutoEncoderModule():
-    batch_size = 8
+    batch_size = 16
     epochs = 50
 
     dm = DataModule(batch_size=batch_size)

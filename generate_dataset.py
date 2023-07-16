@@ -66,7 +66,6 @@ class GenDataset:
                 
             Image.fromarray(front_image[0].cpu().numpy()*255).convert('L').save(os.path.join(self.gen_test_image_dir, f"front_{i}.jpg"))
             Image.fromarray(side_image[0].cpu().numpy()*255).convert('L').save(os.path.join(self.gen_test_image_dir, f"side_{i}.jpg"))
-            
 
 
 if __name__ == "__main__":

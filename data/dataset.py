@@ -50,6 +50,7 @@ class BinaryImageMeasDataset(Dataset):
                 'meas': measurement_lst, 
                 'idx': json_data['idx']}
 
+
 if __name__ == "__main__":
     dataset = BinaryImageMeasDataset(data_dir=config.GEN_TRAIN_DIR, 
                                      transform=transforms.Compose([
@@ -59,3 +60,4 @@ if __name__ == "__main__":
                                         Resize((512, 512), interpolation=F.InterpolationMode.NEAREST),
                                     ]))
     data_dict = dataset.__getitem__(0)
+    print(data_dict['front'].float().dtype)

@@ -27,6 +27,9 @@ GEN_DATA_DIR = os.path.join(DATA_DIR, 'gen_data')
 GEN_TRAIN_DIR = os.path.join(GEN_DATA_DIR, 'train')
 GEN_TEST_DIR = os.path.join(GEN_DATA_DIR, 'test')
 
+# aihub data dir
+AIHUB_DATA_DIR = os.path.join(DATA_DIR, 'aihub')
+
 # real user dir
 REAL_USER_DIR = "/home/shin/Documents/real_user"
 # secret data dir
@@ -44,6 +47,10 @@ MEASUREMENTS_ORDER = [
         "inside leg height",
         "shoulder breadth",
 ]
+
+# aihub
+CLOTH_CATEGORY = ['동복', '춘추복1', '춘추복2', '측정복', '하복1', '하복2']
+AIHUB_OUTPUT_ORDER = ['키', '젖가슴둘레', '허리둘레', '엉덩이둘레', '넙다리둘레', '팔길이', '엉덩이높이', '어깨사이너비']
 
 # ------------------------ Constants ------------------------
 FOCAL_LENGTH = 5000.

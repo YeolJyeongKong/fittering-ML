@@ -1,4 +1,5 @@
-FROM sinjy1203/fittering-meas:2.0
+FROM sinjy1203/fittering-measurements:2.0
+# FROM public.ecr.aws/lambda/python:3.8
 
 COPY ./ ${LAMBDA_TASK_ROOT}
 RUN ls -la ${LAMBDA_TASK_ROOT}/*
