@@ -1,6 +1,7 @@
 import os
 import json
 from PIL import Image
+import pickle
 import numpy as np
 import cv2
 import torch
@@ -12,6 +13,7 @@ from torchvision import transforms
 from torchvision.transforms import ToTensor, Lambda, ToPILImage, Resize, Compose
 from torchvision.transforms import functional as F
 from data.preprocessing import *
+from encoder_inference import InferenceEncoder
 
 import sys
 sys.path.append("/home/shin/VScodeProjects/fittering-ML/opensrc/SemanticGuidedHumanMatting")
@@ -59,19 +61,11 @@ class Inference:
         return json.dumps(str(meas))
 
 
-def predict(front_image, side_image, height):
-    device = torch.device('cpu')
+class Inferencev2:
+    def __init__(self, segmodel_path=config.SEGMODEL_PATH):
+        self.device = torch.device('cpu')
 
-    model_cnn = CNNForwardModule()
-    ckpt = torch.load(config.CNNMODEL_PATH, map_location=device)
-    model_cnn.load_state_dict(ckpt['state_dict'])
-    model_cnn.eval()
-
-    model = HumanMatting(backbone='resnet50')
-    model = nn.DataParallel(model).eval()
-    model.load_state_dict(torch.load(config.SEGMODEL_PATH, map_location=device))
-
-    transform = Compose([
+        self.transform = Compose([
                             ToTensor(),
                             BinTensor(threshold=0.9), 
                             Lambda(crop_true), 
@@ -79,64 +73,38 @@ def predict(front_image, side_image, height):
                             Lambda(morphology),
                         ])
 
-    front_pred_alpha, front_pred_mask = inference.single_inference(model, front_image)
-    side_pred_alpha, side_pred_mask = inference.single_inference(model, side_image)
+        seg_model = HumanMatting(backbone='resnet50')
+        self.seg_model = nn.DataParallel(seg_model).eval()
+        self.seg_model.load_state_dict(torch.load(segmodel_path, map_location=self.device))
 
-    front = torch.unsqueeze(transform(front_pred_mask), dim=0)
-    side = torch.unsqueeze(transform(side_pred_mask), dim=0)
-    height = torch.unsqueeze(torch.tensor(height), dim=0)
+        self.encoder = InferenceEncoder(device=self.device)
 
-    with torch.no_grad():
-        pred = model_cnn(front, side, height).numpy()
-    meas = {name: pred_ for name, pred_ in zip(config.MEASUREMENTS_ORDER, pred[0])}
-    
-    return json.dumps(str(meas))
+        self.regression = pickle.load(open(config.REGRESSION_PATH, "rb"))
 
 
-def predict_time(front_image, side_image, height):
-    device = torch.device('cpu')
+    def predict(self, front, side, height):
+        front_pred_alpha, front_pred_mask = inference.single_inference(self.seg_model, front, self.device)
+        side_pred_alpha, side_pred_mask = inference.single_inference(self.seg_model, side, self.device)
 
-    ta = time.time()
-    model_cnn = CNNForwardModule()
-    ckpt = torch.load(config.CNNMODEL_PATH, map_location=device)
-    model_cnn.load_state_dict(ckpt['state_dict'])
-    model_cnn.eval()
+        front = torch.unsqueeze(self.transform(front_pred_mask), dim=0)
+        side = torch.unsqueeze(self.transform(side_pred_mask), dim=0)
+        height = torch.tensor(height).reshape(1, 1)
 
-    model = HumanMatting(backbone='resnet50')
-    model = nn.DataParallel(model).eval()
-    model.load_state_dict(torch.load(config.SEGMODEL_PATH, map_location=device))
-    tb = time.time()
+        with torch.no_grad():
+            z = self.encoder.inference(front, side)
 
-    transform = Compose([
-                            ToTensor(),
-                            BinTensor(threshold=0.9), 
-                            Lambda(crop_true), 
-                            Resize((512, 512), interpolation=F.InterpolationMode.NEAREST),
-                            Lambda(morphology),
-                        ])
+        z_ = torch.cat([z, height], dim=1).numpy()
+        y = self.regression.predict(z_)
+        meas = {name: pred_ for name, pred_ in zip(config.MEASUREMENTS_ORDER, y[0])}
+        
+        return json.dumps(str(meas))
 
-    front_pred_alpha, front_pred_mask = inference.single_inference(model, front_image)
-    side_pred_alpha, side_pred_mask = inference.single_inference(model, side_image)
-    tc = time.time()
-
-    front = torch.unsqueeze(transform(front_pred_mask), dim=0)
-    side = torch.unsqueeze(transform(side_pred_mask), dim=0)
-    height = torch.unsqueeze(torch.tensor(height), dim=0)
-
-    with torch.no_grad():
-        pred = model_cnn(front, side, height).numpy()
-    td = time.time()
-    meas = {name: pred_ for name, pred_ in zip(config.MEASUREMENTS_ORDER, pred[0])}
-    
-    return ta, tb, tc, td
-    # return json.dumps(str(meas))
-    # return "success"
 
 
 if __name__ == "__main__":
-    front_bin_image = Image.open(os.path.join(config.SECRET_USER_DIR, '0', "front.jpg"))
-    side_bin_image = Image.open(os.path.join(config.SECRET_USER_DIR, '0', "front.jpg"))
-    inf = Inference(cnnmodel_path='./model_weights/epoch=19-step=160000.ckpt')
-    meas = inf.predict(front_bin_image, side_bin_image, 181)
+    front_bin_image = Image.open(os.path.join(config.SECRET_USER_DIR, '1', "front.jpg"))
+    side_bin_image = Image.open(os.path.join(config.SECRET_USER_DIR, '1', "side.jpg"))
+    inf = Inferencev2()
+    meas = inf.predict(front_bin_image, side_bin_image, 165)
     # print(time.time() - t)
     print(json.loads(meas))

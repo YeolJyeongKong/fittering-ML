@@ -3,32 +3,39 @@ import os
 # ------------------------ Paths ------------------------
 # Additional files
 ADDITIONAL_DIR = "./data/additional"
-SMPL_MODEL_DIR = os.path.join(ADDITIONAL_DIR, 'smpl')
-SMPL_FACES_PATH = os.path.join(ADDITIONAL_DIR, 'smpl_faces.npy')
-SMPL_MEAN_PARAMS_PATH = os.path.join(ADDITIONAL_DIR, 'neutral_smpl_mean_params_6dpose.npz')
-J_REGRESSOR_EXTRA_PATH = os.path.join(ADDITIONAL_DIR, 'J_regressor_extra.npy')
-COCOPLUS_REGRESSOR_PATH = os.path.join(ADDITIONAL_DIR, 'cocoplus_regressor.npy')
-H36M_REGRESSOR_PATH = os.path.join(ADDITIONAL_DIR, 'J_regressor_h36m.npy')
-VERTEX_TEXTURE_PATH = os.path.join(ADDITIONAL_DIR, 'vertex_texture.npy')
-CUBE_PARTS_PATH = os.path.join(ADDITIONAL_DIR, 'cube_parts.npy')
-SEGMENTATION_PATH = os.path.join(ADDITIONAL_DIR, 'smpl_body_parts_2_faces.json')
+SMPL_MODEL_DIR = os.path.join(ADDITIONAL_DIR, "smpl")
+SMPL_FACES_PATH = os.path.join(ADDITIONAL_DIR, "smpl_faces.npy")
+SMPL_MEAN_PARAMS_PATH = os.path.join(
+    ADDITIONAL_DIR, "neutral_smpl_mean_params_6dpose.npz"
+)
+J_REGRESSOR_EXTRA_PATH = os.path.join(ADDITIONAL_DIR, "J_regressor_extra.npy")
+COCOPLUS_REGRESSOR_PATH = os.path.join(ADDITIONAL_DIR, "cocoplus_regressor.npy")
+H36M_REGRESSOR_PATH = os.path.join(ADDITIONAL_DIR, "J_regressor_h36m.npy")
+VERTEX_TEXTURE_PATH = os.path.join(ADDITIONAL_DIR, "vertex_texture.npy")
+CUBE_PARTS_PATH = os.path.join(ADDITIONAL_DIR, "cube_parts.npy")
+SEGMENTATION_PATH = os.path.join(ADDITIONAL_DIR, "smpl_body_parts_2_faces.json")
 
 # model weights
 MODEL_WEIGHTS_DIR = "./model_weights"
-CNNMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, 'CNNForwardNet.ckpt')
-SEGMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, 'SGHM-ResNet50.pth')
+CNNMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, "CNNForwardNet.ckpt")
+SEGMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, "SGHM-ResNet50.pth")
+FRONTAE_PATH = os.path.join(MODEL_WEIGHTS_DIR, "front_ae.ckpt")
+SIDEAE_PATH = os.path.join(MODEL_WEIGHTS_DIR, "side_ae.ckpt")
+REGRESSION_PATH = os.path.join(MODEL_WEIGHTS_DIR, "reg.pickle")
 
 # data dir
-DATA_DIR = './data/source'
+DATA_DIR = "./data/source"
 # ordinary data path
-ORD_DATA_PATH = os.path.join(DATA_DIR, 'amass_up3d_3dpw_train.npz')
+ORD_DATA_PATH = os.path.join(DATA_DIR, "amass_up3d_3dpw_train.npz")
 # generated data path
-GEN_DATA_DIR = os.path.join(DATA_DIR, 'gen_data')
-GEN_TRAIN_DIR = os.path.join(GEN_DATA_DIR, 'train')
-GEN_TEST_DIR = os.path.join(GEN_DATA_DIR, 'test')
+GEN_DATA_DIR = os.path.join(DATA_DIR, "gen_data")
+GEN_TRAIN_DIR = os.path.join(GEN_DATA_DIR, "train")
+GEN_TEST_DIR = os.path.join(GEN_DATA_DIR, "test")
+
+GEN_ENCODE_DIR = os.path.join(DATA_DIR, "gen_encode_data")
 
 # aihub data dir
-AIHUB_DATA_DIR = os.path.join(DATA_DIR, 'aihub')
+AIHUB_DATA_DIR = os.path.join(DATA_DIR, "aihub")
 
 # real user dir
 REAL_USER_DIR = "/home/shin/Documents/real_user"
@@ -38,22 +45,22 @@ SECRET_USER_DIR = "/home/shin/Documents/secret_data"
 
 # ------------------------ label order ------------------------
 MEASUREMENTS_ORDER = [
-        "height",
-        "chest circumference",
-        "waist circumference",
-        "hip circumference",
-        "thigh left circumference",
-        "arm left length",
-        "inside leg height",
-        "shoulder breadth",
+    "height",
+    "chest circumference",
+    "waist circumference",
+    "hip circumference",
+    "thigh left circumference",
+    "arm left length",
+    "inside leg height",
+    "shoulder breadth",
 ]
 
 # aihub
-CLOTH_CATEGORY = ['동복', '춘추복1', '춘추복2', '측정복', '하복1', '하복2']
-AIHUB_OUTPUT_ORDER = ['키', '젖가슴둘레', '허리둘레', '엉덩이둘레', '넙다리둘레', '팔길이', '엉덩이높이', '어깨사이너비']
+CLOTH_CATEGORY = ["동복", "춘추복1", "춘추복2", "측정복", "하복1", "하복2"]
+AIHUB_OUTPUT_ORDER = ["키", "젖가슴둘레", "허리둘레", "엉덩이둘레", "넙다리둘레", "팔길이", "엉덩이높이", "어깨사이너비"]
 
 # ------------------------ Constants ------------------------
-FOCAL_LENGTH = 5000.
+FOCAL_LENGTH = 5000.0
 REGRESSOR_IMG_WH = 512
 
 # ------------------------ Joint label conventions ------------------------
@@ -86,4 +93,3 @@ delta_j2d_hip_dev_range = [-8, 8]
 delta_verts2d_dev_range = [-0.01, 0.01]
 occlude_probability = 0.5
 occlude_box_dim = 48
-
