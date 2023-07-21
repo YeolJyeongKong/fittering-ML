@@ -7,7 +7,7 @@ from tqdm import tqdm
 from PIL import Image
 from data.augmentation import AugmentBetasCam
 from datamodule import DataModule
-from data.dataset import BinaryImageMeasDataset
+from data.dataset import BinaryImageMeasDataset, AihubDataset
 from torch.utils.data import DataLoader
 from encoder_inference import InferenceEncoder
 
@@ -89,21 +89,24 @@ class GenDataset:
 class GenEncodeDataset:
     def __init__(
         self,
-        encode_data_dir=config.GEN_ENCODE_DIR,
+        encode_data_dir,
+        dataset_mode="aihub",
         batch_size=16,
         device=torch.device("cuda"),
     ):
         self.encode_data_dir = encode_data_dir
+        GenEncodeDataset._check_make_dir(self.encode_data_dir)
+        self.batch_size = batch_size
         self.device = device
 
-        dm = DataModule(batch_size=batch_size)
+        dm = DataModule(batch_size=batch_size, dataset_mode=dataset_mode)
         transform = dm.transform
         self.batch_size = batch_size
-        train_dataset = BinaryImageMeasDataset(
-            data_dir=config.GEN_TRAIN_DIR, transform=transform
+        train_dataset = AihubDataset(
+            data_dir=os.path.join(config.AIHUB_DATA_DIR, "train"), transform=transform
         )
-        test_dataset = BinaryImageMeasDataset(
-            data_dir=config.GEN_TEST_DIR, transform=transform
+        test_dataset = AihubDataset(
+            data_dir=os.path.join(config.AIHUB_DATA_DIR, "test"), transform=transform
         )
 
         self.train_len = len(train_dataset)
@@ -118,16 +121,31 @@ class GenEncodeDataset:
 
         self.inference_encoder = InferenceEncoder(device=torch.device("cuda"))
 
+    @staticmethod
+    def _check_make_dir(dir):
+        if not os.path.exists(dir):
+            os.mkdir(dir)
+
     def generate_(self, len_dataset, dataloader, name):
-        total_input_arr = np.empty((len_dataset, 513))
+        total_input_arr = np.empty((len_dataset, 515))
         total_output_arr = np.empty((len_dataset, 8))
 
-        for idx, batch in tqdm(enumerate(dataloader), desc=f"generate {name}"):
+        for idx, batch in tqdm(
+            enumerate(dataloader),
+            desc=f"generate {name}",
+            total=(len_dataset // self.batch_size),
+        ):
             pred = self.inference_encoder.inference(
                 batch["front"].to(self.device), batch["side"].to(self.device)
             )
             input_tensor = torch.cat(
-                [pred.cpu(), batch["height"].unsqueeze(dim=1)], dim=1
+                [
+                    pred.cpu(),
+                    batch["height"].unsqueeze(dim=1),
+                    batch["weight"].unsqueeze(dim=1),
+                    batch["sex"].unsqueeze(dim=1),
+                ],
+                dim=1,
             )
             input_arr = input_tensor.cpu().numpy()
             total_input_arr[
@@ -161,5 +179,9 @@ if __name__ == "__main__":
     # }
     # gen_dataset = GenDataset(gen_params)
     # gen_dataset.generate()
-    gen_dataset = GenEncodeDataset(batch_size=32)
+    gen_dataset = GenEncodeDataset(
+        encode_data_dir=os.path.join(config.AIHUB_DATA_DIR, "encode"),
+        dataset_mode="aihub",
+        batch_size=32,
+    )
     gen_dataset.generate()

@@ -73,9 +73,12 @@ class CNNForwardModule(pl.LightningModule):
     
 
 class AutoEncoderModule(pl.LightningModule):
-    def __init__(self, learning_rate=1e-4):
+    def __init__(self, learning_rate=1e-4, model_mode="front"):
         super().__init__()
         self.learning_rate = learning_rate
+        self.model_mode = model_mode
+        assert model_mode in ('front', 'side')
+
         self.save_hyperparameters()
 
         self.autoencoder = AutoEncoder()
@@ -86,7 +89,7 @@ class AutoEncoderModule(pl.LightningModule):
         return self.autoencoder.encoder(x)
     
     def training_step(self, batch, batch_idx):
-        x = batch['side']
+        x = batch[self.model_mode]
         y = self.autoencoder(x)
         loss = F.binary_cross_entropy(y, x)
 
@@ -99,7 +102,7 @@ class AutoEncoderModule(pl.LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx):
-        x = batch['side']
+        x = batch[self.model_mode]
         y = self.autoencoder(x)
         loss = F.binary_cross_entropy(y, x)
 
@@ -112,7 +115,7 @@ class AutoEncoderModule(pl.LightningModule):
         return loss
     
     def test_step(self, batch, batch_idx):
-        x = batch['side']
+        x = batch[self.model_mode]
         y = self.autoencoder(x)
         loss = F.binary_cross_entropy(y, x)
 

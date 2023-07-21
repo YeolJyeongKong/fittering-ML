@@ -68,13 +68,13 @@ def train_CNNForwardModule():
 
 def train_AutoEncoderModule():
     batch_size = 16
-    epochs = 50
+    epochs = 30
 
-    dm = DataModule(batch_size=batch_size)
+    dm = DataModule(batch_size=batch_size, dataset_mode="aihub")
     dm.prepare_data()
     dm.setup()
 
-    module = AutoEncoderModule()
+    module = AutoEncoderModule(model_mode="side")
     wandb_logger = WandbLogger(project="wandb-lightning", job_type="train")
 
     val_samples = next(iter(dm.val_dataloader()))
@@ -86,7 +86,7 @@ def train_AutoEncoderModule():
         callbacks=[
             EarlyStopping(monitor="val_loss"),
             ModelCheckpoint(),
-            ImagePredictionLogger(val_samples=val_samples),
+            ImagePredictionLogger(val_samples=val_samples, model_mode="side"),
         ],
     )
 
@@ -96,22 +96,25 @@ def train_AutoEncoderModule():
 
 
 def train_LinearRegression():
-    train_dataset = np.load(os.path.join(config.GEN_ENCODE_DIR, "train.npz"))
-    test_dataset = np.load(os.path.join(config.GEN_ENCODE_DIR, "test.npz"))
-    # svr = SVR()
-    svr = LinearRegression()
-    # svr = KernelRidge(alpha=0.1, kernel="poly", degree=2)
-    # svr.fit(test_dataset["x"][:10], test_dataset["y"][:10])
-    # pred = svr.predict(test_dataset["x"])
-    svr = svr.fit(train_dataset["x"], train_dataset["y"])
-    train_mae = mean_absolute_error(train_dataset["y"], svr.predict(train_dataset["x"]))
-    test_mae = mean_absolute_error(test_dataset["y"], svr.predict(test_dataset["x"]))
+    train_dataset = np.load(os.path.join(config.AIHUB_ENCODE_DIR, "train.npz"))
+    test_dataset = np.load(os.path.join(config.AIHUB_ENCODE_DIR, "test.npz"))
+    train_x, train_y = train_dataset["x"], train_dataset["y"]
+    test_x, test_y = test_dataset["x"], test_dataset["y"]
+    train_x = train_x[np.isnan(train_y).sum(axis=1) == 0]
+    train_y = train_y[np.isnan(train_y).sum(axis=1) == 0]
+    print(f"train data x shape = {train_dataset['x'].shape}")
+    print(f"train data y shape = {train_dataset['y'].shape}")
+
+    reg = KernelRidge(alpha=0.2, kernel="poly", degree=3)
+    reg.fit(train_x, train_y)
+    train_mae = mean_absolute_error(train_y, reg.predict(train_x))
+    test_mae = mean_absolute_error(test_y, reg.predict(test_x))
 
     print(f"train score: {train_mae}, test score: {test_mae}")
-    pickle.dump(svr, open(os.path.join(config.MODEL_WEIGHTS_DIR, "svr.pickle"), "wb"))
+    pickle.dump(reg, open(os.path.join(config.MODEL_WEIGHTS_DIR, "reg.pickle"), "wb"))
 
 
 if __name__ == "__main__":
-    # train_AutoEncoderModule()
     # train_CNNForwardModule()
+    # train_AutoEncoderModule()
     train_LinearRegression()

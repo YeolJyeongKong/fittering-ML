@@ -19,8 +19,8 @@ SEGMENTATION_PATH = os.path.join(ADDITIONAL_DIR, "smpl_body_parts_2_faces.json")
 MODEL_WEIGHTS_DIR = "./model_weights"
 CNNMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, "CNNForwardNet.ckpt")
 SEGMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, "SGHM-ResNet50.pth")
-FRONTAE_PATH = os.path.join(MODEL_WEIGHTS_DIR, "front_ae.ckpt")
-SIDEAE_PATH = os.path.join(MODEL_WEIGHTS_DIR, "side_ae.ckpt")
+FRONTAE_PATH = os.path.join(MODEL_WEIGHTS_DIR, "frontAE.ckpt")
+SIDEAE_PATH = os.path.join(MODEL_WEIGHTS_DIR, "sideAE.ckpt")
 REGRESSION_PATH = os.path.join(MODEL_WEIGHTS_DIR, "reg.pickle")
 
 # data dir
@@ -36,6 +36,7 @@ GEN_ENCODE_DIR = os.path.join(DATA_DIR, "gen_encode_data")
 
 # aihub data dir
 AIHUB_DATA_DIR = os.path.join(DATA_DIR, "aihub")
+AIHUB_ENCODE_DIR = os.path.join(AIHUB_DATA_DIR, "encode")
 
 # real user dir
 REAL_USER_DIR = "/home/shin/Documents/real_user"
