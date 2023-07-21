@@ -3,7 +3,7 @@ from pytorch_lightning.callbacks import Callback, EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.types import EPOCH_OUTPUT
 import torchmetrics
-from torchmetrics import MeanAbsoluteError
+from torchmetrics import MeanAbsoluteError, Accuracy
 
 import wandb
 
@@ -73,61 +73,59 @@ class CNNForwardModule(pl.LightningModule):
     
 
 class AutoEncoderModule(pl.LightningModule):
-    def __init__(self, learning_rate=1e-4):
+    def __init__(self, learning_rate=1e-4, model_mode="front"):
         super().__init__()
         self.learning_rate = learning_rate
+        self.model_mode = model_mode
+        assert model_mode in ('front', 'side')
+
         self.save_hyperparameters()
 
         self.autoencoder = AutoEncoder()
 
-        self.avg_acc_train = AccuracyBinaryImage()
-        self.avg_acc_val = AccuracyBinaryImage()
-        self.avg_acc_test = AccuracyBinaryImage()
+        self.acc = Accuracy(task='binary')
 
     def forward(self, x):
         return self.autoencoder.encoder(x)
     
     def training_step(self, batch, batch_idx):
-        x = batch['front']
+        x = batch[self.model_mode]
         y = self.autoencoder(x)
         loss = F.binary_cross_entropy(y, x)
 
-        avg_acc = self.avg_acc_train.metric(y, x)
+        logits = (y > 0.5).float()
+        acc = self.acc(logits, x)
+
         self.log('train_loss', loss, on_step=True, on_epoch=True, logger=True)
-        self.log('train_avg_acc', avg_acc, on_step=True, on_epoch=True, logger=True)
+        self.log('train_acc', acc, on_step=True, on_epoch=True, logger=True)
 
         return loss
-    
-    def training_epoch_end(self, outputs: EPOCH_OUTPUT) -> None:
-        self.avg_acc_train.compute_score()
     
     def validation_step(self, batch, batch_idx):
-        x = batch['front']
+        x = batch[self.model_mode]
         y = self.autoencoder(x)
         loss = F.binary_cross_entropy(y, x)
 
-        avg_acc = self.avg_acc_val.metric(y, x)
+        logits = (y > 0.5).float()
+        acc = self.acc(logits, x)
+
         self.log('val_loss', loss, prog_bar=True)
+        self.log('val_acc', acc, prog_bar=True)
 
         return loss
-    
-    def validation_epoch_end(self, outputs: EPOCH_OUTPUT) -> None:
-        val_avg_acc = self.avg_acc_val.compute_score()
-        self.log('val_avg_acc', val_avg_acc, prog_bar=True)
     
     def test_step(self, batch, batch_idx):
-        x = batch['front']
+        x = batch[self.model_mode]
         y = self.autoencoder(x)
         loss = F.binary_cross_entropy(y, x)
 
-        avg_acc = self.avg_acc(y, x)
+        logits = (y > 0.5).float()
+        acc = self.acc(logits, x)
+
         self.log('test_loss', loss, prog_bar=True)
-        self.log('test_avg_acc', avg_acc, prog_bar=True)
+        self.log('test_acc', acc, prog_bar=True)
 
         return loss
-    
-    def test_epoch_end(self, outputs: EPOCH_OUTPUT) -> None:
-        self.avg_acc_test.compute_score()
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)

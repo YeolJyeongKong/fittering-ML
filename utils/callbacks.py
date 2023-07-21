@@ -19,21 +19,23 @@ from utils.predict import Beta2Measurements
 import config
 
 class ImagePredictionLogger(Callback):
-    def __init__(self, val_samples):
+    def __init__(self, val_samples, model_mode='front'):
         super().__init__()
         self.val_samples = val_samples
+        assert model_mode in ('front', 'side')
+        self.model_mode = model_mode
 
     def on_validation_epoch_end(self, trainer, pl_module):
-        x = self.val_samples['front']
+        x = self.val_samples[self.model_mode]
         x = x.to(pl_module.device)
 
         logits = pl_module.autoencoder(x)
         preds = (logits > 0.5).float()
         
         trainer.logger.experiment.log({
-            "input front image": [wandb.Image(x_[0])
+            "input image": [wandb.Image(x_[0])
                                 for x_ in x], 
-            "output front image": [wandb.Image(pred[0]) 
+            "output image": [wandb.Image(pred[0]) 
                                 for pred in preds],
         })
 

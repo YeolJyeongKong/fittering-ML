@@ -5,3 +5,6 @@
 .git
 wandb
 wandb-lightning
+crawling
+.vscode
+

@@ -11,6 +11,7 @@ data/source/
 # model weights
 *.ckpt
 *.pth
+model_weights
 
 # opensource
 modeling/Human-Segmentation-PyTorch/
@@ -38,6 +39,8 @@ wandb-lightning
 aws_accesskey/
 fittering-ML-inference/aws_accesskey/
 practice.ipynb
+practice.py
+test.ipynb
 
 
 # Byte-compiled / optimized / DLL files
