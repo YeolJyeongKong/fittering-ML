@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from efficientnet_pytorch import EfficientNet as efficientnet
 from torchvision import models
-from torchsummary import summary
 
 
 class ResNet(nn.Module):
@@ -204,92 +203,11 @@ class AutoEncoder(nn.Module):
         return self.decoder(self.encoder(x))
 
 
-# class AutoEncoder(pl.LightningModule):
-#     def __init__(self, filters=32, learning_rate=1e-4):
-#         super().__init__()
+class CombAutoEncoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.frontae = AutoEncoder()
+        self.sideae = AutoEncoder()
 
-#         self.save_hyperparameters()
-#         self.learning_rate = learning_rate
-#         self.filters = 32
-
-#         self.accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=10)
-
-#     def forward(self, x):
-#         x = self._forward_features(x)
-#         x = x.view(x.size(0), -1)
-#         x = F.relu(self.fc1(x))
-#         x = F.relu(self.fc2(x))
-#         x = F.log_softmax(self.fc3(x), dim=1)
-#         return x
-
-#     def training_step(self, batch, batch_idx):
-#         x, y = batch
-#         logits = self(x)
-#         loss = F.nll_loss(logits, y)
-
-#         preds = torch.argmax(logits, dim=1)
-#         acc = self.accuracy(preds, y)
-#         self.log('train_loss', loss, on_step=True, on_epoch=True, logger=True)
-#         self.log('train_acc', acc, on_step=True, on_epoch=True, logger=True)
-
-#         return loss
-
-#     def validation_step(self, batch, batch_idx):
-#         x, y = batch
-#         logits = self(x)
-#         loss = F.nll_loss(logits, y)
-
-#         preds = torch.argmax(logits, dim=1)
-#         acc = self.accuracy(preds, y)
-#         self.log('val_loss', loss, prog_bar=True) # on_step=False, on_epoch=True
-#         self.log('val_acc', acc, prog_bar=True) # on_step=False, on_epoch=True
-#         return loss
-
-#     def test_step(self, batch, batch_idx):
-#         x, y = batch
-#         logits = self(x)
-#         loss = F.nll_loss(logits, y)
-
-#         preds = torch.argmax(logits, dim=1)
-#         acc = self.accuracy(preds, y)
-#         self.log('test_loss', loss, prog_bar=True) # on_step=False, on_epoch=True
-#         self.log('test_acc', acc, prog_bar=True) # on_step=False, on_epoch=True
-#         return loss
-
-#     def configure_optimizers(self):
-#         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-#         return optimizer
-
-
-if __name__ == "__main__":
-    # device = torch.device('cuda')
-    # model = EfficientNet().to(device)
-    # image = torch.randn((10, 2, 512, 512)).to(device)
-    # height = torch.randn((10, 1)).to(device)
-    # sample_output = model(image, height)
-    # print(sample_output.shape)
-
-    # model = Decoder().to(device)
-    # summary(model, (512,))
-    # import sys
-    # sys.path.append("/home/shin/VScodeProjects/fittering-ML")
-    # from datamodule import DataModule
-    # dm = DataModule(batch_size=16)
-    # dm.prepare_data()
-    # dm.setup()
-    # val_samples = next(iter(dm.val_dataloader()))
-
-    # model = EfficientNet_().cuda()
-    # model = ResNet().cuda()
-    # model = SimpleNet_(5, 100).cuda()
-    model = AutoEncoder().cuda()
-    # model = HumanMatting(backbone='resnet50')
-    # model = nn.DataParallel(model)
-    # model = Model()
-    # output = model(torch.zeros((16, 1, 512, 512)))
-    # model.load_state_dict(torch.load(config.SEGMODEL_PATH, map_location=device))
-    summary(model, (1, 512, 512), batch_size=16)
-
-    # make_dot(output.mean(), params=dict(model.named_parameters()), show_attrs=True, show_saved=True).render("attached", format="png")
-    # model = ResNet()
-    # print(model)
+    def forward(self, front, side):
+        return self.frontae(front), self.sideae(side)

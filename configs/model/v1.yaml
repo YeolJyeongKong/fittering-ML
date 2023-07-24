@@ -1,0 +1,9 @@
+autoencoder:
+  _target_: src.models.lightning_modules.CombAutoEncoderModule
+  learning_rate: 1e-4
+
+regression:
+  _target_: sklearn.kernel_ridge.KernelRidge
+  alpha: 0.2
+  kernel: poly
+  degree: 3

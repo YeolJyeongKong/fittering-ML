@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pickle
 import warnings
+from tqdm import tqdm
 
 warnings.filterwarnings(action="ignore")
 import pyrootutils
@@ -26,15 +27,16 @@ from pytorch_lightning.loggers import WandbLogger
 import torchmetrics
 
 import wandb
+import hydra
+from omegaconf import DictConfig, OmegaConf
+import logging
+
+log = logging.getLogger(__name__)
 
 from src.models.lightning_modules import CNNForwardModule, AutoEncoderModule
 from src.data.datamodule import DataModule
-from utils.callbacks import (
-    ImagePredictionLogger,
-    BetaPredictionLogger,
-    MeasurementsLogger,
-    RealDataPredictLogger,
-)
+from src.inference import encoder_inference
+from src import utils
 
 from extras import paths
 
@@ -70,56 +72,74 @@ def train_CNNForwardModule():
     wandb.finish()
 
 
-def train_AutoEncoderModule():
-    batch_size = 16
-    epochs = 30
-
-    dm = DataModule(batch_size=batch_size, dataset_mode="aihub")
+def train_AutoEncoderModule(cfg: DictConfig):
+    dm = hydra.utils.instantiate(cfg.data.autoencoder)
     dm.prepare_data()
     dm.setup()
 
-    module = AutoEncoderModule(model_mode="front")
-    wandb_logger = WandbLogger(project="wandb-lightning", job_type="train")
+    module = hydra.utils.instantiate(cfg.model.autoencoder)
+
+    wandb_logger = hydra.utils.instantiate(cfg.logger.wandb)
+    utils.print_wandb_run(cfg)
 
     val_samples = next(iter(dm.val_dataloader()))
 
-    trainer = pl.Trainer(
-        max_epochs=epochs,
-        gpus=1,
+    trainer = hydra.utils.instantiate(
+        cfg.trainer.autoencoder,
         logger=wandb_logger,
         callbacks=[
             EarlyStopping(monitor="val_loss"),
-            ModelCheckpoint(),
-            ImagePredictionLogger(val_samples=val_samples, model_mode="front"),
+            ModelCheckpoint(dirpath=cfg.paths.model_save_dir, filename="autoencoder"),
+            utils.ImagePredictionLogger(val_samples=val_samples),
         ],
     )
 
     trainer.fit(module, datamodule=dm)
     trainer.test(datamodule=dm)
-    wandb.finish()
+
+    return module, dm
 
 
-def train_LinearRegression():
-    train_dataset = np.load(os.path.join(paths.AIHUB_ENCODED_DIR, "train.npz"))
-    test_dataset = np.load(os.path.join(paths.AIHUB_ENCODED_DIR, "test.npz"))
-    train_x, train_y = train_dataset["x"], train_dataset["y"]
-    test_x, test_y = test_dataset["x"], test_dataset["y"]
+def train_Regression(train, test, cfg: DictConfig):
+    train_x, train_y = train
+    test_x, test_y = test
+
+    print(f"train data x shape = {train_x.shape}")
+    print(f"train data y shape = {train_y.shape}")
+
     train_x = train_x[np.isnan(train_y).sum(axis=1) == 0]
     train_y = train_y[np.isnan(train_y).sum(axis=1) == 0]
 
-    print(f"train data x shape = {train_dataset['x'].shape}")
-    print(f"train data y shape = {train_dataset['y'].shape}")
+    print(f"train data x shape = {train_x.shape}")
+    print(f"train data y shape = {train_y.shape}")
 
-    reg = KernelRidge(alpha=0.2, kernel="poly", degree=3)
+    reg = hydra.utils.instantiate(cfg.model.regression)
     reg.fit(train_x, train_y)
     train_mae = mean_absolute_error(train_y, reg.predict(train_x))
     test_mae = mean_absolute_error(test_y, reg.predict(test_x))
 
-    print(f"train score: {train_mae}, test score: {test_mae}")
-    pickle.dump(reg, open(os.path.join(paths.MODEL_WEIGHTS_DIR, "reg.pickle"), "wb"))
+    pickle.dump(
+        reg, open(os.path.join(cfg.paths.model_save_dir, "regression.pickle"), "wb")
+    )
+
+    wandb.log({"regression_train_mae": train_mae, "regression_test_mae": test_mae})
+
+    wandb.finish()
+
+
+@hydra.main(version_base=None, config_path="../configs", config_name="train")
+def main(cfg: DictConfig) -> None:
+    utils.print_config_tree(cfg, resolve=True, save_to_file=True)
+
+    module, datamodule = train_AutoEncoderModule(cfg)
+    (train_x, train_y), (test_x, test_y) = encoder_inference.encode(
+        module, datamodule, device=torch.device("cuda")
+    )
+    train_Regression((train_x, train_y), (test_x, test_y), cfg)
 
 
 if __name__ == "__main__":
     # train_CNNForwardModule()
     # train_AutoEncoderModule()
-    train_LinearRegression()
+    # train_LinearRegression()
+    main()

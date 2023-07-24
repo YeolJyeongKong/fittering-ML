@@ -20,23 +20,26 @@ from extras import paths
 
 
 class ImagePredictionLogger(Callback):
-    def __init__(self, val_samples, model_mode="front"):
+    def __init__(self, val_samples):
         super().__init__()
         self.val_samples = val_samples
-        assert model_mode in ("front", "side")
-        self.model_mode = model_mode
 
     def on_validation_epoch_end(self, trainer, pl_module):
-        x = self.val_samples[self.model_mode]
-        x = x.to(pl_module.device)
+        front = self.val_samples["front"].to(pl_module.device)
+        side = self.val_samples["side"].to(pl_module.device)
 
-        logits = pl_module.autoencoder(x)
-        preds = (logits > 0.5).float()
+        front_logits = pl_module.front_autoencoder(front)
+        side_logits = pl_module.side_autoencoder(side)
+
+        front_pred = (front_logits > 0.5).float()
+        side_pred = (side_logits > 0.5).float()
 
         trainer.logger.experiment.log(
             {
-                "input image": [wandb.Image(x_[0]) for x_ in x],
-                "output image": [wandb.Image(pred[0]) for pred in preds],
+                "input front image": [wandb.Image(i[0]) for i in front],
+                "output front image": [wandb.Image(o[0]) for o in front_pred],
+                "input side image": [wandb.Image(i[0]) for i in side],
+                "output side image": [wandb.Image(o[0]) for o in side_pred],
             }
         )
 
