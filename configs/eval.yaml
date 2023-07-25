@@ -1,0 +1,11 @@
+defaults:  
+  - _self_  
+  - override hydra/hydra_logging: disabled  
+  - override hydra/job_logging: disabled  
+
+output_dir: /home/shin/VScodeProjects/fittering-ML/outputs/2023-07-25/02-29-50
+
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .

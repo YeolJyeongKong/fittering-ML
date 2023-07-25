@@ -16,6 +16,9 @@ from torchvision import transforms
 from torchvision.transforms import ToTensor, Lambda, ToPILImage, Resize, Compose
 from torchvision.transforms import functional as F
 
+import hydra
+from omegaconf import DictConfig, OmegaConf
+
 from src.models.lightning_modules import CNNForwardModule
 from src.data.datamodule import DataModule
 from src.data.preprocessing import *
@@ -23,6 +26,7 @@ from src.inference.encoder_inference import InferenceEncoder
 from src.inference.segment_inference import InferenceSegment
 
 from extras import paths, constant
+from src import utils
 
 
 class Inference:
@@ -69,28 +73,25 @@ class Inference:
 class Evaluate:
     def __init__(
         self,
+        cfg: DictConfig,
         segmodel_path=paths.SEGMODEL_PATH,
-        front_ae_path=paths.FRONTAE_PATH,
-        side_ae_path=paths.SIDEAE_PATH,
-        regression_path=paths.REGRESSION_PATH,
         device=torch.device("cpu"),
     ):
         self.device = device
 
-        self.transform = Compose(
-            [
-                ToTensor(),
-                BinTensor(threshold=0.9),
-                Lambda(crop_true),
-                Resize((512, 512), interpolation=F.InterpolationMode.NEAREST),
-            ]
-        )
+        output_dir = cfg.output_dir
+        cfg = OmegaConf.load(os.path.join(output_dir, ".hydra/config.yaml"))
+
+        dm = hydra.utils.instantiate(cfg.data.autoencoder)
+        self.transform = dm.transform
 
         self.segment = InferenceSegment(segmodel_path=segmodel_path, device=self.device)
 
-        self.encoder = InferenceEncoder(front_ae_path, side_ae_path, device=self.device)
+        self.encoder = InferenceEncoder(cfg, output_dir, device=self.device)
 
-        self.regression = pickle.load(open(regression_path, "rb"))
+        self.regression = pickle.load(
+            open(os.path.join(output_dir, "models/regression.pickle"), "rb")
+        )
 
     def predict(self, front, side, height, weight, sex):
         front_masked = self.segment.predict(front)
@@ -112,10 +113,20 @@ class Evaluate:
         return json.dumps(str(meas))
 
 
-if __name__ == "__main__":
+@hydra.main(version_base=None, config_path="../configs", config_name="eval.yaml")
+def main(cfg: DictConfig) -> None:
+    utils.print_config_tree(cfg, resolve=True, save_to_file=False)
+
+    evaluate = Evaluate(
+        cfg, segmodel_path=paths.SEGMODEL_PATH, device=torch.device("cpu")
+    )
+
     front_bin_image = Image.open(os.path.join(paths.SECRET_USER_DIR, "0", "front.jpg"))
     side_bin_image = Image.open(os.path.join(paths.SECRET_USER_DIR, "0", "side.jpg"))
-    eval = Evaluate()
-    meas = eval.predict(front_bin_image, side_bin_image, 181, 65, 1)  # 남자는 1 여자는 0
-    # print(time.time() - t)
+
+    meas = evaluate.predict(front_bin_image, side_bin_image, 181, 65, 1)  # 남자는 1 여자는 0
     print(json.loads(meas))
+
+
+if __name__ == "__main__":
+    main()

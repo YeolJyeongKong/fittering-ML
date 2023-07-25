@@ -1,7 +1,10 @@
+import os
 import numpy as np
 from tqdm import tqdm
 import torch
 import torch.nn as nn
+import hydra
+from omegaconf import DictConfig
 
 from src.models.lightning_modules import AutoEncoderModule, CombAutoEncoderModule
 from extras import paths
@@ -10,19 +13,21 @@ from extras import paths
 class InferenceEncoder:
     def __init__(
         self,
-        model_path,
+        cfg: DictConfig,
+        output_dir,
         device=torch.device("cuda"),
     ) -> None:
-        self.autoencoder = CombAutoEncoderModule().to(device)
-        ckpt = torch.load(model_path, map_location=device)
+        self.autoencoder = hydra.utils.instantiate(cfg.model.autoencoder).to(device)
+        ckpt = torch.load(
+            os.path.join(output_dir, "models/autoencoder.ckpt"), map_location=device
+        )
         self.autoencoder.load_state_dict(ckpt["state_dict"])
         self.autoencoder.eval()
 
     def inference(self, front, side):
         with torch.no_grad():
-            front = self.front_ae(front)
-            side = self.side_ae(side)
-        return torch.cat([front, side], dim=1)
+            front_z, side_z = self.autoencoder(front, side)
+        return torch.cat([front_z, side_z], dim=1)
 
 
 def encode_(module, dataloader, dataset_len, batch_size, device):
