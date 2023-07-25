@@ -1,0 +1,6 @@
+defaults:
+  - model: v1.yaml
+  - data: v1.yaml
+  - trainer: v1.yaml
+  - logger: wandb.yaml
+  - paths: default.yaml

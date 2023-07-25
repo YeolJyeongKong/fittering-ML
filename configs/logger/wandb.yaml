@@ -1,0 +1,5 @@
+wandb:
+  _target_: pytorch_lightning.loggers.WandbLogger
+  project: fittering
+  save_dir: "${paths.output_dir}"
+  offline: False
