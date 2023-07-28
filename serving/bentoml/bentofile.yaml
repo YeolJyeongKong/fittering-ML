@@ -1,0 +1,15 @@
+service: "serving.bentoml.service:svc"
+labels: 
+  owner: yeoljyeongkong
+  stage: dev
+exclude:
+  - "test/"
+  - "outputs/"
+  - "model_weights/"
+  - "data/"
+python: 
+  requirements_txt: "./serving/bentoml/requirements.serving.txt"
+models:
+  - "segmodel:latest"
+  - "autoencoder:latest"
+  - "regression:latest"
