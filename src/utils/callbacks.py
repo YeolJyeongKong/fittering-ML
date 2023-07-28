@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 from torchvision import transforms
 from torchvision.transforms import ToTensor, Lambda, ToPILImage, Resize, Compose
 from torchvision.transforms import functional as F
-from data.preprocessing import *
 
-from utils.visualize import Beta2Verts
-from utils.predict_measure import Beta2Measurements
+from src.data.preprocessing import *
+from src.utils.visualize import Beta2Verts
+from src.utils.predict_measure import Beta2Measurements
 
 from extras import paths
 

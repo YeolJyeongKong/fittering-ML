@@ -6,8 +6,8 @@ sys.path.append("/home/shin/VScodeProjects/fittering-ML")
 from src.data.synthesize.smpl_official import SMPL
 from smplx.lbs import batch_rodrigues
 
-from utils.measure import MeasureVerts
-from utils.measurement_definitions import *
+from src.utils.measure import MeasureVerts
+from src.utils.measurement_definitions import *
 from extras import paths
 
 

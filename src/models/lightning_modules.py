@@ -18,7 +18,7 @@ from src.models.models import (
     SimpleNet,
     CombAutoEncoder,
 )
-from utils.metrics import AccuracyBinaryImage, MeasureMAE
+from src.utils.metrics import AccuracyBinaryImage, MeasureMAE
 
 
 class CNNForwardModule(pl.LightningModule):

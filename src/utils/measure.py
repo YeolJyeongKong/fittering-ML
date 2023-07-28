@@ -14,7 +14,7 @@ import torch
 
 sys.path.append("/home/shin/VScodeProjects/fittering-ML")
 from extras import paths
-from utils.measurement_definitions import *
+from src.utils.measurement_definitions import *
 
 
 def load_face_segmentation(segmentation_path):

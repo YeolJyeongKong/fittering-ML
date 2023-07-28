@@ -1,7 +1,10 @@
 import os
+import pyrootutils
+
+ROOT_DIR = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
 # ------------------------ Additional files ------------------------
-ADDITIONAL_DIR = "./extras/smpl/additional"
+ADDITIONAL_DIR = os.path.join(ROOT_DIR, "./extras/smpl/additional")
 SMPL_MODEL_DIR = os.path.join(ADDITIONAL_DIR, "models")
 SMPL_FACES_PATH = os.path.join(ADDITIONAL_DIR, "smpl_faces.npy")
 SMPL_MEAN_PARAMS_PATH = os.path.join(
@@ -15,7 +18,7 @@ CUBE_PARTS_PATH = os.path.join(ADDITIONAL_DIR, "cube_parts.npy")
 SEGMENTATION_PATH = os.path.join(ADDITIONAL_DIR, "smpl_body_parts_2_faces.json")
 
 # ------------------------ model weights ------------------------
-MODEL_WEIGHTS_DIR = "./model_weights"
+MODEL_WEIGHTS_DIR = os.path.join(ROOT_DIR, "./model_weights")
 
 SEGMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, "SGHM-ResNet50.pth")
 CNNMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, "CNNForwardNet.ckpt")
@@ -25,7 +28,7 @@ REGRESSION_PATH = os.path.join(MODEL_WEIGHTS_DIR, "reg.pickle")
 
 
 # ------------------------ data ------------------------
-DATA_DIR = "./data"
+DATA_DIR = os.path.join(ROOT_DIR, "./data")
 
 # aihub data
 AIHUB_DATA_DIR = os.path.join(DATA_DIR, "aihub")
@@ -48,3 +51,8 @@ REAL_USER_DIR = "/home/shin/Documents/real_user"
 
 # secret data dir
 SECRET_USER_DIR = "/home/shin/Documents/secret_data"
+
+# s3 access key
+S3_ACCESS_KEY_PATH = (
+    "/home/shin/Documents/aws/aws_access_key/LocalS3AccessUser_accessKeys.csv"
+)

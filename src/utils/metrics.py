@@ -2,8 +2,8 @@ import numpy as np
 import torch
 from torchmetrics import Metric
 
-from utils.measure import MeasureVerts
-from utils.predict_measure import Beta2Measurements
+from src.utils.measure import MeasureVerts
+from src.utils.predict_measure import Beta2Measurements
 
 
 class AccuracyBinaryImage:
