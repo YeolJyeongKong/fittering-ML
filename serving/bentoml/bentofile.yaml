@@ -6,10 +6,15 @@ exclude:
   - "test/"
   - "outputs/"
   - "model_weights/"
-  - "data/"
+  - "data/aihub"
+  - "data/synthetic"
 python: 
   requirements_txt: "./serving/bentoml/requirements.serving.txt"
 models:
   - "segmodel:latest"
   - "autoencoder:latest"
   - "regression:latest"
+docker:
+  system_packages:
+    - libgl1-mesa-glx
+    - libglib2.0-0
