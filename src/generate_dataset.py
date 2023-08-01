@@ -1,25 +1,33 @@
 import os
 import json
 import numpy as np
+import matplotlib.pyplot as plt
+from omegaconf import OmegaConf
+import hydra
 import torch
-import paths.config as config
+from torch.utils.data import DataLoader
+import torchvision.transforms.functional as F
 from tqdm import tqdm
 from PIL import Image
-from data.data_augmentation.augmentation import AugmentBetasCam
+import pyrootutils
+
+pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
+
+from src.data.synthesize.augmentation import AugmentBetasCam
 from src.data.datamodule import DataModule
-from data.dataset import BinaryImageMeasDataset, AihubDataset
-from torch.utils.data import DataLoader
-from demo.encoder_inference import InferenceEncoder
+from src.data.preprocess import *
+from data.dataset import BinaryImageMeasDataset, AihubDataset, AihubOriDataset
+from extras import paths, constant
 
 
 class GenDataset:
     def __init__(
         self,
-        gen_param,
+        gen_params,
         data_size=1e5,
         train_ratio=0.8,
-        ord_data_path=config.ORD_DATA_PATH,
-        gen_data_dir=config.GEN_DATA_DIR,
+        ord_data_path=paths.SYNTHETIC_ORIGINAL_DIR,
+        gen_data_dir=paths.SYNTHETIC_DATA_DIR,
         device=torch.device("cuda"),
     ):
         self.augment = AugmentBetasCam(device=torch.device("cuda"), **gen_params)
@@ -86,86 +94,35 @@ class GenDataset:
             )
 
 
-class GenEncodeDataset:
+class GenSegmentation:
     def __init__(
         self,
-        encode_data_dir,
-        dataset_mode="aihub",
-        batch_size=16,
+        data_dir=paths.AIHUB_DATA_DIR,
+        transform=None,
+        seg_model=None,
         device=torch.device("cuda"),
-    ):
-        self.encode_data_dir = encode_data_dir
-        GenEncodeDataset._check_make_dir(self.encode_data_dir)
-        self.batch_size = batch_size
+    ) -> None:
+        self.dataset = AihubOriDataset(data_dir, transform=transform)
+
+        self.seg_model = seg_model
+        self.seg_model.eval()
+        self.seg_model.load_state_dict(
+            torch.load(paths.SEGMODEL_PATH, map_location=torch.device("cuda"))
+        )
         self.device = device
 
-        dm = DataModule(batch_size=batch_size, dataset_mode=dataset_mode)
-        transform = dm.transform
-        self.batch_size = batch_size
-        train_dataset = AihubDataset(
-            data_dir=os.path.join(config.AIHUB_DATA_DIR, "train"), transform=transform
-        )
-        test_dataset = AihubDataset(
-            data_dir=os.path.join(config.AIHUB_DATA_DIR, "test"), transform=transform
-        )
-
-        self.train_len = len(train_dataset)
-        self.test_len = len(test_dataset)
-
-        self.train_dataloader = DataLoader(
-            train_dataset, batch_size=batch_size, shuffle=False
-        )
-        self.test_dataloader = DataLoader(
-            test_dataset, batch_size=batch_size, shuffle=False
-        )
-
-        self.inference_encoder = InferenceEncoder(device=torch.device("cuda"))
-
     @staticmethod
-    def _check_make_dir(dir):
-        if not os.path.exists(dir):
-            os.mkdir(dir)
-
-    def generate_(self, len_dataset, dataloader, name):
-        total_input_arr = np.empty((len_dataset, 515))
-        total_output_arr = np.empty((len_dataset, 8))
-
-        for idx, batch in tqdm(
-            enumerate(dataloader),
-            desc=f"generate {name}",
-            total=(len_dataset // self.batch_size),
-        ):
-            pred = self.inference_encoder.inference(
-                batch["front"].to(self.device), batch["side"].to(self.device)
-            )
-            input_tensor = torch.cat(
-                [
-                    pred.cpu(),
-                    batch["height"].unsqueeze(dim=1),
-                    batch["weight"].unsqueeze(dim=1),
-                    batch["sex"].unsqueeze(dim=1),
-                ],
-                dim=1,
-            )
-            input_arr = input_tensor.cpu().numpy()
-            total_input_arr[
-                idx * self.batch_size : (idx + 1) * self.batch_size
-            ] = input_arr
-
-            output_arr = batch["meas"].cpu().numpy()
-            total_output_arr[
-                idx * self.batch_size : (idx + 1) * self.batch_size
-            ] = output_arr
-
-        return total_input_arr, total_output_arr
+    def save_image_(idx, front_side_masked, shape, paths):
+        image = F.resize(front_side_masked[idx].cpu(), size=shape[idx]).numpy()[0]
+        plt.imsave(paths[idx], image, cmap="gray")
 
     def generate(self):
-        train_x, train_y = self.generate_(
-            self.train_len, self.train_dataloader, "train"
-        )
-        test_x, test_y = self.generate_(self.test_len, self.test_dataloader, "test")
-        np.savez(os.path.join(self.encode_data_dir, "train"), x=train_x, y=train_y)
-        np.savez(os.path.join(self.encode_data_dir, "test"), x=test_x, y=test_y)
+        for idx in tqdm(range(len(self.dataset)), desc="generate masked dataset"):
+            front_side, paths, shape = self.dataset.__getitem__(idx)
+            with torch.no_grad():
+                front_side_masked = self.seg_model(front_side.to(self.device))
+            for i in range(2):
+                GenSegmentation.save_image_(i, front_side_masked, shape, paths)
 
 
 if __name__ == "__main__":
@@ -179,9 +136,16 @@ if __name__ == "__main__":
     # }
     # gen_dataset = GenDataset(gen_params)
     # gen_dataset.generate()
-    gen_dataset = GenEncodeDataset(
-        encode_data_dir=os.path.join(config.AIHUB_DATA_DIR, "encode"),
-        dataset_mode="aihub",
-        batch_size=32,
+
+    model_yaml_path = "/home/shin/VScodeProjects/fittering-ML/configs/model/v1.yaml"
+    model_cfg = OmegaConf.load(model_yaml_path)
+    seg_model = hydra.utils.instantiate(model_cfg.segment)
+
+    preprocess_yaml_path = (
+        "/home/shin/VScodeProjects/fittering-ML/configs/preprocess/v1.yaml"
     )
-    gen_dataset.generate()
+    preprocess_cfg = OmegaConf.load(preprocess_yaml_path)
+    preprocess = hydra.utils.instantiate(preprocess_cfg.segment)
+
+    gen = GenSegmentation(transform=preprocess, seg_model=seg_model)
+    gen.generate()

@@ -1,0 +1,16 @@
+segment:
+  _target_: torchvision.transforms.Compose
+  transforms: 
+    - _target_: torchvision.transforms.ToTensor
+    - _target_: torchvision.transforms.Resize
+      size: [1280, 1280]
+
+autoencoder:
+  _target_: torchvision.transforms.Compose
+  transforms: 
+    - _target_: torchvision.transforms.ToTensor
+    - _target_: src.data.preprocess.Crop
+      threshold: 0.5
+    - _target_: torchvision.transforms.Resize
+      size: [512, 512]
+

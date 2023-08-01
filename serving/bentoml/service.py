@@ -1,3 +1,4 @@
+import os
 import json
 import sys
 from typing import Dict, Any
@@ -9,39 +10,57 @@ from pathlib import Path
 import base64
 from io import BytesIO
 
+import torch
 import torchvision.transforms.functional as F
 import bentoml
 from bentoml.io import JSON
 import boto3
 import pyrootutils
+from omegaconf import OmegaConf
+import hydra
 from pydantic import BaseModel
 
-pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
+root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
 from extras import paths
+from src.utils import preprocess
+from src.data.datamodule import DataModule
 
-segmodel_runner = bentoml.pytorch.get("segmodel:latest").to_runner()
+
+output_dir = "outputs/2023-08-01/10-55-57"
+cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
+
+segment_preprocess = hydra.utils.instantiate(cfg.preprocess.segment)
+segment_runner = bentoml.pytorch.get("segment:latest").to_runner()
+
+autoencoder_preprocess = hydra.utils.instantiate(cfg.preprocess.autoencoder)
 autoencoder_runner = bentoml.pytorch_lightning.get("autoencoder:latest").to_runner()
 del sys.modules["prometheus_client"]
+
 regression_runner = bentoml.sklearn.get("regression:latest").to_runner()
+
 svc = bentoml.Service(
     "human_size_predict",
-    runners=[segmodel_runner, autoencoder_runner, regression_runner],
+    runners=[segment_runner, autoencoder_runner, regression_runner],
 )
 
-# s3_access_key = pd.read_csv(paths.S3_ACCESS_KEY_PATH)
-s3 = boto3.client(
-    "s3",
-    # aws_access_key_id=s3_access_key["Access key ID"].values[0],
-    # aws_secret_access_key=s3_access_key["Secret access key"].values[0],
-    # region_name="ap-northeast-2",
-)
+try:
+    s3_access_key = pd.read_csv(paths.S3_ACCESS_KEY_PATH)
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id=s3_access_key["Access key ID"].values[0],
+        aws_secret_access_key=s3_access_key["Secret access key"].values[0],
+        region_name="ap-northeast-2",
+    )
+except:
+    s3 = boto3.client("s3")
+
 BUCKET_NAME = "fittering-measurements-images"
 
 
 class ImageS3Path(BaseModel):
-    front: str
-    side: str
+    front: str = "0/front.jpg"
+    side: str = "0/side.jpg"
 
 
 @svc.api(
@@ -51,6 +70,7 @@ def masking(input: ImageS3Path) -> ImageS3Path:
     input = input.dict()
     front_path = input["front"]
     side_path = input["side"]
+
     front_masked_path = str(Path(front_path).parent / "front_masked.jpg")
     side_masked_path = str(Path(side_path).parent / "side_masked.jpg")
     front = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=front_path)["Body"])
@@ -58,25 +78,13 @@ def masking(input: ImageS3Path) -> ImageS3Path:
     side = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=side_path)["Body"])
     side_size = side.size
 
-    front = F.pil_to_tensor(front)
-    front = F.resize(front, size=(512, 512))
-    front = front.unsqueeze(dim=0).float() / 255.0
-    front_masked = segmodel_runner.run(front)[0]
-    front_masked = F.resize(front_masked, size=front_size[::-1])
-    front_masked = F.to_pil_image(front_masked).convert("RGB")
-    buffered = BytesIO()
-    front_masked.save(buffered, format="JPEG")
-    front_str = buffered.getvalue()
+    front = segment_preprocess(front).unsqueeze(0)
+    side = segment_preprocess(side).unsqueeze(0)
+    masked = segment_runner.run(torch.cat([front, side], dim=0))
 
-    side = F.pil_to_tensor(side)
-    side = F.resize(side, size=(512, 512))
-    side = side.unsqueeze(dim=0).float() / 255.0
-    side_masked = segmodel_runner.run(side)[0]
-    side_masked = F.resize(side_masked, size=side_size[::-1])
-    side_masked = F.to_pil_image(side_masked).convert("RGB")
-    buffered = BytesIO()
-    side_masked.save(buffered, format="JPEG")
-    side_str = buffered.getvalue()
+    front_str = preprocess.to_bytearray(masked[0], front_size)
+
+    side_str = preprocess.to_bytearray(masked[1], side_size)
 
     s3.put_object(
         Bucket=BUCKET_NAME,
@@ -92,3 +100,61 @@ def masking(input: ImageS3Path) -> ImageS3Path:
     )
 
     return {"front": front_masked_path, "side": side_masked_path}
+
+
+class User(BaseModel):
+    front: str = "0/front_masked.jpg"
+    side: str = "0/side_masked.jpg"
+    height: float = 177
+    weight: float = 65
+    sex: str = "M"
+
+
+class UserSize(BaseModel):
+    height: float
+    chest_circumference: float
+    waist_circumference: float
+    hip_circumference: float
+    thigh_left_circumference: float
+    arm_left_length: float
+    inside_leg_height: float
+    shoulder_breadth: float
+
+
+@svc.api(input=JSON(pydantic_model=User), output=JSON(pydantic_model=UserSize))
+def human_size(input: User) -> UserSize:
+    input = input.dict()
+    front_path = input["front"]
+    side_path = input["side"]
+
+    front = Image.open(
+        s3.get_object(Bucket=BUCKET_NAME, Key=front_path)["Body"]
+    ).convert("L")
+    side = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=side_path)["Body"]).convert(
+        "L"
+    )
+
+    front = autoencoder_preprocess(front).unsqueeze(dim=0)
+    side = autoencoder_preprocess(side).unsqueeze(dim=0)
+
+    encoded = autoencoder_runner.run(front, side)
+
+    height = torch.tensor(input["height"]).reshape((1, 1))
+    weight = torch.tensor(input["weight"]).reshape((1, 1))
+    sex = torch.tensor(float(input["sex"] == "M")).reshape((1, 1))
+    z = torch.cat(
+        [encoded[0].cpu(), encoded[1].cpu(), height, weight, sex], dim=1
+    ).numpy()
+
+    pred = regression_runner.run(z)
+
+    return {
+        "height": pred[0][0],
+        "chest_circumference": pred[0][1],
+        "waist_circumference": pred[0][2],
+        "hip_circumference": pred[0][3],
+        "thigh_left_circumference": pred[0][4],
+        "arm_left_length": pred[0][5],
+        "inside_leg_height": pred[0][6],
+        "shoulder_breadth": pred[0][7],
+    }

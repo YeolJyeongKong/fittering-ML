@@ -122,7 +122,7 @@ class CombAutoEncoderModule(pl.LightningModule):
 
         pred = (logits > 0.5).float()
 
-        acc = self.acc(pred, target)
+        acc = self.acc(pred, (target > 0.5))
 
         self.log("train_loss", loss, on_step=True, on_epoch=True, logger=True)
         self.log("train_acc", acc, on_step=True, on_epoch=True, logger=True)
@@ -143,7 +143,7 @@ class CombAutoEncoderModule(pl.LightningModule):
 
         pred = (logits > 0.5).float()
 
-        acc = self.acc(pred, target)
+        acc = self.acc(pred, (target > 0.5))
 
         self.log("val_loss", loss, prog_bar=True)
         self.log("val_acc", acc, prog_bar=True)
@@ -164,7 +164,7 @@ class CombAutoEncoderModule(pl.LightningModule):
 
         pred = (logits > 0.5).float()
 
-        acc = self.acc(pred, target)
+        acc = self.acc(pred, (target > 0.5))
 
         self.log("test_loss", loss, prog_bar=True)
         self.log("test_acc", acc, prog_bar=True)

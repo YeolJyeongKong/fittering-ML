@@ -4,3 +4,4 @@ defaults:
   - trainer: v1.yaml
   - logger: wandb.yaml
   - paths: default.yaml
+  - preprocess: v1.yaml

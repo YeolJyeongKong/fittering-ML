@@ -85,7 +85,7 @@ networkx==3.1
 numpy==1.23.1
 oauthlib==3.2.2
 omegaconf==2.3.0
-opencv-python==4.8.0.74
+opencv-python==4.5.3.56
 opentelemetry-api==1.18.0
 opentelemetry-instrumentation==0.39b0
 opentelemetry-instrumentation-aiohttp-client==0.39b0
