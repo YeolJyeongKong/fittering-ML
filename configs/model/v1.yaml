@@ -1,3 +1,8 @@
+segment:
+  _target_: torch.nn.DataParallel
+  module: 
+    _target_: src.SemanticGuidedHumanMatting.model.model.HumanMatting
+
 autoencoder:
   _target_: src.models.lightning_modules.CombAutoEncoderModule
   learning_rate: 1e-4

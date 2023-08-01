@@ -1,3 +1,4 @@
+import os
 import json
 import sys
 from typing import Dict, Any
@@ -15,21 +16,32 @@ import bentoml
 from bentoml.io import JSON
 import boto3
 import pyrootutils
+from omegaconf import OmegaConf
+import hydra
 from pydantic import BaseModel
 
-pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
+root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
 from extras import paths
 from src.utils import preprocess
 from src.data.datamodule import DataModule
 
-segmodel_runner = bentoml.pytorch.get("segmodel:latest").to_runner()
+
+output_dir = "outputs/2023-08-01/10-55-57"
+cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
+
+segment_preprocess = hydra.utils.instantiate(cfg.preprocess.segment)
+segment_runner = bentoml.pytorch.get("segment:latest").to_runner()
+
+autoencoder_preprocess = hydra.utils.instantiate(cfg.preprocess.autoencoder)
 autoencoder_runner = bentoml.pytorch_lightning.get("autoencoder:latest").to_runner()
 del sys.modules["prometheus_client"]
+
 regression_runner = bentoml.sklearn.get("regression:latest").to_runner()
+
 svc = bentoml.Service(
     "human_size_predict",
-    runners=[segmodel_runner, autoencoder_runner, regression_runner],
+    runners=[segment_runner, autoencoder_runner, regression_runner],
 )
 
 try:
@@ -47,8 +59,8 @@ BUCKET_NAME = "fittering-measurements-images"
 
 
 class ImageS3Path(BaseModel):
-    front: str
-    side: str
+    front: str = "0/front.jpg"
+    side: str = "0/side.jpg"
 
 
 @svc.api(
@@ -66,13 +78,13 @@ def masking(input: ImageS3Path) -> ImageS3Path:
     side = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=side_path)["Body"])
     side_size = side.size
 
-    front = preprocess.preprocess_segment(front)
-    front_masked = segmodel_runner.run(front)[0]
-    front_str = preprocess.to_bytearray(front_masked, front_size)
+    front = segment_preprocess(front).unsqueeze(0)
+    side = segment_preprocess(side).unsqueeze(0)
+    masked = segment_runner.run(torch.cat([front, side], dim=0))
 
-    side = preprocess.preprocess_segment(side)
-    side_masked = segmodel_runner.run(side)[0]
-    side_str = preprocess.to_bytearray(side_masked, side_size)
+    front_str = preprocess.to_bytearray(masked[0], front_size)
+
+    side_str = preprocess.to_bytearray(masked[1], side_size)
 
     s3.put_object(
         Bucket=BUCKET_NAME,
@@ -91,11 +103,11 @@ def masking(input: ImageS3Path) -> ImageS3Path:
 
 
 class User(BaseModel):
-    front: str
-    side: str
-    height: float
-    weight: float
-    sex: str
+    front: str = "0/front_masked.jpg"
+    side: str = "0/side_masked.jpg"
+    height: float = 177
+    weight: float = 65
+    sex: str = "M"
 
 
 class UserSize(BaseModel):
@@ -122,19 +134,17 @@ def human_size(input: User) -> UserSize:
         "L"
     )
 
-    dm = DataModule()
-    transforms = dm.transform
-
-    front = transforms(front).unsqueeze(dim=0)
-    side = transforms(side).unsqueeze(dim=0)
+    front = autoencoder_preprocess(front).unsqueeze(dim=0)
+    side = autoencoder_preprocess(side).unsqueeze(dim=0)
 
     encoded = autoencoder_runner.run(front, side)
 
     height = torch.tensor(input["height"]).reshape((1, 1))
     weight = torch.tensor(input["weight"]).reshape((1, 1))
     sex = torch.tensor(float(input["sex"] == "M")).reshape((1, 1))
-    print(height, weight, sex)
-    z = torch.cat([encoded[0], encoded[1], height, weight, sex], dim=1)
+    z = torch.cat(
+        [encoded[0].cpu(), encoded[1].cpu(), height, weight, sex], dim=1
+    ).numpy()
 
     pred = regression_runner.run(z)
 

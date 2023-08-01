@@ -4,14 +4,15 @@ labels:
   stage: dev
 exclude:
   - "test/"
-  - "outputs/"
+  - "outputs/*/*/models"
+  - "outputs/*/*/wandb"
   - "model_weights/"
   - "data/aihub"
   - "data/synthetic"
 python: 
   requirements_txt: "./serving/bentoml/requirements.serving.txt"
 models:
-  - "segmodel:latest"
+  - "segment:latest"
   - "autoencoder:latest"
   - "regression:latest"
 docker:

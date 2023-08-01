@@ -21,7 +21,7 @@ from omegaconf import DictConfig, OmegaConf
 
 from src.models.lightning_modules import CNNForwardModule
 from src.data.datamodule import DataModule
-from src.data.preprocessing import *
+from data.preprocess import *
 from src.inference.encoder_inference import InferenceEncoder
 from src.inference.segment_inference import InferenceSegment
 

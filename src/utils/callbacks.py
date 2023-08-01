@@ -12,7 +12,7 @@ from torchvision import transforms
 from torchvision.transforms import ToTensor, Lambda, ToPILImage, Resize, Compose
 from torchvision.transforms import functional as F
 
-from src.data.preprocessing import *
+from src.data.preprocess import *
 from src.utils.visualize import Beta2Verts
 from src.utils.predict_measure import Beta2Measurements
 

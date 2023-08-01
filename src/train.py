@@ -29,6 +29,7 @@ import torchmetrics
 import wandb
 import hydra
 from omegaconf import DictConfig, OmegaConf
+import bentoml
 import logging
 
 log = logging.getLogger(__name__)
@@ -97,6 +98,8 @@ def train_AutoEncoderModule(cfg: DictConfig):
     trainer.fit(module, datamodule=dm)
     trainer.test(datamodule=dm)
 
+    bentoml.pytorch_lightning.save_model("autoencoder", module)
+
     return module, dm
 
 
@@ -125,16 +128,28 @@ def train_Regression(train, test, cfg: DictConfig):
     wandb.log({"regression_train_mae": train_mae, "regression_test_mae": test_mae})
 
     wandb.finish()
+    bentoml.sklearn.save_model("regression", reg)
+
+
+def save_segment(cfg: DictConfig):
+    segment = hydra.utils.instantiate(cfg.model.segment)
+    segment.load_state_dict(
+        torch.load(paths.SEGMODEL_PATH, map_location=torch.device("cpu"))
+    )
+    bentoml.pytorch.save_model("segment", segment)
 
 
 @hydra.main(version_base=None, config_path="../configs", config_name="train")
 def main(cfg: DictConfig) -> None:
     utils.print_config_tree(cfg, resolve=True, save_to_file=True)
 
+    # save_segment(cfg)  # 처음에만 저장해놓기
+
     module, datamodule = train_AutoEncoderModule(cfg)
     (train_x, train_y), (test_x, test_y) = encoder_inference.encode(
         module, datamodule, device=torch.device("cuda")
     )
+
     train_Regression((train_x, train_y), (test_x, test_y), cfg)
 
 
