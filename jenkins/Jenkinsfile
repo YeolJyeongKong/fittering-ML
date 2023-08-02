@@ -4,10 +4,11 @@ pipeline {
     stages {
         stage('Bentoml to docker image'){
             steps {
-                sh '''#!/usr/bin/env bash
-                source ~/anaconda3/etc/profile.d/conda.sh
-                conda activate fittering-measurements-cpufittering-measurements-cpu
-                '''
+                echo WORKSPACE
+                // sh '''#!/usr/bin/env bash
+                // source ~/anaconda3/etc/profile.d/conda.sh
+                // conda activate fittering-measurements-cpufittering-measurements-cpu
+                // '''
                 // sh "./jenkins/bentoml_build.sh"
                 // sh "source ~/anaconda3/etc/profile.d/conda.sh"
                 // sh "conda activate fittering-measurements-cpu"
