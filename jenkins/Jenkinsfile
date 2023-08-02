@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Bentoml to docker image'){
             steps {
-                source "jenkins/bentoml_build.sh"
+                "./jenkins/bentoml_build.sh"
             }
         }
     }
