@@ -5,10 +5,13 @@ pipeline {
         stage('Bentoml to docker image'){
             steps {
                 // sh "./jenkins/bentoml_build.sh"
-                sh "source ~/anaconda3/etc/profile.d/conda.sh"
-                sh "conda activate fittering-measurements-cpu"
-                sh "bentoml build -f /home/shin/VScodeProjects/fittering-ML/outputs/2023-08-02/00-17-34/bentofile.yaml"
-                sh "bentoml containerize human_size_predict:latest"
+                // sh "source ~/anaconda3/etc/profile.d/conda.sh"
+                // sh "conda activate fittering-measurements-cpu"
+                // sh "bentoml build -f /home/shin/VScodeProjects/fittering-ML/outputs/2023-08-02/00-17-34/bentofile.yaml"
+                // sh "bentoml containerize human_size_predict:latest"
+                sh '''#!/bin/bash
+                    . /home/shin/anaconda3/bin/activate fittering-measurements-cpu
+                '''
             }
         }
     }
