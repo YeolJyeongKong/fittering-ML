@@ -2,15 +2,9 @@ pipeline {
     agent any
 
     stages {
-        stage('Clone repository') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Bentoml to docker image'){
             steps {
-                source jenkins/bentoml_build.sh
+                source "jenkins/bentoml_build.sh"
             }
         }
     }
