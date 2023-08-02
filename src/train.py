@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import warnings
 from tqdm import tqdm
+import yaml
 
 warnings.filterwarnings(action="ignore")
 import pyrootutils
@@ -98,9 +99,9 @@ def train_AutoEncoderModule(cfg: DictConfig):
     trainer.fit(module, datamodule=dm)
     trainer.test(datamodule=dm)
 
-    bentoml.pytorch_lightning.save_model("autoencoder", module)
+    bentoml_autoencoder = bentoml.pytorch_lightning.save_model("autoencoder", module)
 
-    return module, dm
+    return module, dm, str(bentoml_autoencoder.tag)
 
 
 def train_Regression(train, test, cfg: DictConfig):
@@ -128,29 +129,45 @@ def train_Regression(train, test, cfg: DictConfig):
     wandb.log({"regression_train_mae": train_mae, "regression_test_mae": test_mae})
 
     wandb.finish()
-    bentoml.sklearn.save_model("regression", reg)
+    bentoml_regression = bentoml.sklearn.save_model("regression", reg)
+
+    return str(bentoml_regression.tag)
 
 
-def save_segment(cfg: DictConfig):
+def save_segment(cfg: DictConfig, saved=True):
+    if saved:
+        return "segment:udnfvsbqigxhfzys"
+
     segment = hydra.utils.instantiate(cfg.model.segment)
     segment.load_state_dict(
         torch.load(paths.SEGMODEL_PATH, map_location=torch.device("cpu"))
     )
-    bentoml.pytorch.save_model("segment", segment)
+    bentoml_segment = bentoml.pytorch.save_model("segment", segment)
+    return str(bentoml_segment.tag)
 
 
 @hydra.main(version_base=None, config_path="../configs", config_name="train")
 def main(cfg: DictConfig) -> None:
     utils.print_config_tree(cfg, resolve=True, save_to_file=True)
 
-    # save_segment(cfg)  # 처음에만 저장해놓기
+    segment_tag = save_segment(cfg, saved=True)
 
-    module, datamodule = train_AutoEncoderModule(cfg)
+    module, datamodule, autoencoder_tag = train_AutoEncoderModule(cfg)
     (train_x, train_y), (test_x, test_y) = encoder_inference.encode(
         module, datamodule, device=torch.device("cuda")
     )
 
-    train_Regression((train_x, train_y), (test_x, test_y), cfg)
+    regression_tag = train_Regression((train_x, train_y), (test_x, test_y), cfg)
+
+    bentofile = OmegaConf.load(paths.BENTOFILE_DEFAULT_PATH)
+    bentofile.models = [
+        segment_tag,
+        autoencoder_tag,
+        regression_tag,
+    ]
+
+    bentofile_path = os.path.join(cfg.paths.output_dir, "bentofile.yaml")
+    OmegaConf.save(config=bentofile, f=bentofile_path)
 
 
 if __name__ == "__main__":
