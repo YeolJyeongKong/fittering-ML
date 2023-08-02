@@ -12,9 +12,10 @@ pipeline {
             }
         }
 
-        stage('Bento containerize')
+        stage('Bento containerize'){
             steps {
                 bentoml containerize human_size_predict:latest
             }
+        }
     }
 }
