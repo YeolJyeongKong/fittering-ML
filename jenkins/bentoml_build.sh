@@ -1,25 +1,14 @@
 #!/bin/bash
-# ANACONDA_DIR="/home/shin/anaconda3"  # Anaconda가 설치된 디렉토리 경로
-# ENV_NAME="fittering-measurements-cpu"         # 가상환경 이름
+source ~/anaconda3/etc/profile.d/conda.sh
+conda activate fittering-measurements-cpu
+bentoml build -f $1/bentofile.yaml
+bentoml containerize human_size_predict:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict:latest
 
-# # Anaconda가 설치된 디렉토리로 이동합니다.
-# cd $ANACONDA_DIR
+aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com
+docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict:latest
 
-# # Anaconda를 활성화하는 스크립트를 실행합니다.
-# source bin/activate
-
-# # 원하는 가상환경을 활성화합니다.
-# conda activate $ENV_NAME
-
-
-
-# source ~/anaconda3/etc/profile.d/conda.sh
-# conda activate fittering-measurements-cpu
-bentoml build -f /home/shin/VScodeProjects/fittering-ML/outputs/2023-08-02/00-17-34/bentofile.yaml
-bentoml containerize human_size_predict:latest
-
-# echo $PATH
-# echo $HOME
-# /home/shin/anaconda3/bin/activate fittering-measurements-cpu
-# chmod ug+x /app/local/anaconda3/bin/activate
-# bentoml build -f /home/shin/VScodeProjects/fittering-ML/outputs/2023-08-02/00-17-34/bentofile.yaml
+KEYPAIR = /home/shin/Documents/aws/keypairs/ubuntu-desktop-keypairs.pem
+REMOTE_HOST = ec2-54-180-148-94.ap-northeast-2.compute.amazonaws.com
+scp -i $KEYPAIR ./jenkins/deploy.sh ec2-user@$REMOTE_HOST:~/
+ssh -i $KEYPAIR ec2-user@$REMOTE_HOST "chmod +x deploy.sh"
+ssh -i $KEYPAIR ec2-user@$REMOTE_HOST ./deploy.sh
