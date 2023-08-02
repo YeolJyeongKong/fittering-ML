@@ -6,15 +6,9 @@ pipeline {
          checkout scm
         }
 
-        stage('Bentoml Build'){
+        stage('Bentoml to docker image'){
             steps {
-                bentoml build -f "${params.output_dir}/bentofile.yaml"
-            }
-        }
-
-        stage('Bento containerize'){
-            steps {
-                bentoml containerize human_size_predict:latest
+                source jenkins/bentoml_build.sh
             }
         }
     }
