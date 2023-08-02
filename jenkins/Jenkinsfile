@@ -1,0 +1,20 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Clone repository') {
+         checkout scm
+        }
+
+        stage('Bentoml Build'){
+            steps {
+                bentoml build -f "${params.output_dir}/bentofile.yaml"
+            }
+        }
+
+        stage('Bento containerize')
+            steps {
+                bentoml containerize human_size_predict:latest
+            }
+    }
+}

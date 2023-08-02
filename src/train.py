@@ -159,15 +159,15 @@ def main(cfg: DictConfig) -> None:
 
     regression_tag = train_Regression((train_x, train_y), (test_x, test_y), cfg)
 
-    bentoml_tag = {
-        "segment": segment_tag,
-        "autoencoder": autoencoder_tag,
-        "regression": regression_tag,
-    }
+    bentofile = OmegaConf.load(paths.BENTOFILE_DEFAULT_PATH)
+    bentofile.models = [
+        segment_tag,
+        autoencoder_tag,
+        regression_tag,
+    ]
 
-    bentoml_tag_path = os.path.join(cfg.paths.output_dir, "bentoml_models.yaml")
-    with open(bentoml_tag_path, "w") as f:
-        yaml.dump(bentoml_tag, f)
+    bentofile_path = os.path.join(cfg.paths.output_dir, "bentofile.yaml")
+    OmegaConf.save(config=bentofile, f=bentofile_path)
 
 
 if __name__ == "__main__":

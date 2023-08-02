@@ -56,3 +56,8 @@ SECRET_USER_DIR = "/home/shin/Documents/secret_data"
 S3_ACCESS_KEY_PATH = (
     "/home/shin/Documents/aws/aws_access_key/LocalS3AccessUser_accessKeys.csv"
 )
+
+# bentofile_defualt path
+BENTOFILE_DEFAULT_PATH = os.path.join(
+    ROOT_DIR, "serving/bentoml/bentofile_default.yaml"
+)
