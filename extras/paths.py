@@ -21,11 +21,6 @@ SEGMENTATION_PATH = os.path.join(ADDITIONAL_DIR, "smpl_body_parts_2_faces.json")
 MODEL_WEIGHTS_DIR = os.path.join(ROOT_DIR, "./model_weights")
 
 SEGMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, "SGHM-ResNet50.pth")
-CNNMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, "CNNForwardNet.ckpt")
-FRONTAE_PATH = os.path.join(MODEL_WEIGHTS_DIR, "frontAE.ckpt")
-SIDEAE_PATH = os.path.join(MODEL_WEIGHTS_DIR, "sideAE.ckpt")
-REGRESSION_PATH = os.path.join(MODEL_WEIGHTS_DIR, "reg.pickle")
-
 
 # ------------------------ data ------------------------
 DATA_DIR = os.path.join(ROOT_DIR, "./data")

@@ -165,6 +165,7 @@ def main(cfg: DictConfig) -> None:
         autoencoder_tag,
         regression_tag,
     ]
+    bentofile.docker.env.OUTPUT_DIR = cfg.paths.output_dir
 
     bentofile_path = os.path.join(cfg.paths.output_dir, "bentofile.yaml")
     OmegaConf.save(config=bentofile, f=bentofile_path)

@@ -27,7 +27,8 @@ from src.utils import preprocess
 from src.data.datamodule import DataModule
 
 
-output_dir = "outputs/2023-08-01/10-55-57"
+# output_dir = "outputs/2023-08-01/10-55-57"
+output_dir = os.environ["OUTPUT_DIR"]
 cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
 
 segment_preprocess = hydra.utils.instantiate(cfg.preprocess.segment)

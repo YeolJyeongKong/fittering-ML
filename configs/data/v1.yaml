@@ -1,0 +1,9 @@
+autoencoder:
+  _target_: src.data.datamodule.DataModule
+  train_dir: /home/shin/VScodeProjects/fittering-ML/data/aihub/train
+  test_dir: /home/shin/VScodeProjects/fittering-ML/data/aihub/test
+  dataset_mode: aihub
+  batch_size: 8
+  num_workers: 8
+  pin_memory: true
+  transform: ${preprocess.autoencoder}

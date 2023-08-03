@@ -13,7 +13,7 @@ import pyrootutils
 
 pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
-from src.data.synthesize.augmentation import AugmentBetasCam
+# from src.data.synthesize.augmentation import AugmentBetasCam
 from src.data.datamodule import DataModule
 from src.data.preprocess import *
 from data.dataset import BinaryImageMeasDataset, AihubDataset, AihubOriDataset
