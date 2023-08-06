@@ -27,7 +27,7 @@ from src.utils import preprocess
 from src.data.datamodule import DataModule
 
 
-# output_dir = "outputs/2023-08-01/10-55-57"
+# output_dir = "outputs/2023-08-03/15-45-06"
 output_dir = os.environ["OUTPUT_DIR"]
 cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
 
@@ -67,7 +67,7 @@ class ImageS3Path(BaseModel):
 @svc.api(
     input=JSON(pydantic_model=ImageS3Path), output=JSON(pydantic_model=ImageS3Path)
 )
-def masking(input: ImageS3Path) -> ImageS3Path:
+def masking_user(input: ImageS3Path) -> ImageS3Path:
     input = input.dict()
     front_path = input["front"]
     side_path = input["side"]
