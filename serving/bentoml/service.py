@@ -22,61 +22,39 @@ from pydantic import BaseModel
 
 root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
-from extras import paths
+from extras import paths, constant
 from src.utils import preprocess
 from src.data.datamodule import DataModule
+from serving.bentoml import feature, load
 
 
-# output_dir = "outputs/2023-08-03/15-45-06"
-output_dir = os.environ["OUTPUT_DIR"]
-cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
-
-segment_preprocess = hydra.utils.instantiate(cfg.preprocess.segment)
-segment_runner = bentoml.pytorch.get("segment:latest").to_runner()
-
-autoencoder_preprocess = hydra.utils.instantiate(cfg.preprocess.autoencoder)
-autoencoder_runner = bentoml.pytorch_lightning.get("autoencoder:latest").to_runner()
-del sys.modules["prometheus_client"]
-
-regression_runner = bentoml.sklearn.get("regression:latest").to_runner()
-
-svc = bentoml.Service(
-    "human_size_predict",
-    runners=[segment_runner, autoencoder_runner, regression_runner],
-)
-
-try:
-    s3_access_key = pd.read_csv(paths.S3_ACCESS_KEY_PATH)
-    s3 = boto3.client(
-        "s3",
-        aws_access_key_id=s3_access_key["Access key ID"].values[0],
-        aws_secret_access_key=s3_access_key["Secret access key"].values[0],
-        region_name="ap-northeast-2",
-    )
-except:
-    s3 = boto3.client("s3")
-
-BUCKET_NAME = "fittering-measurements-images"
-
-
-class ImageS3Path(BaseModel):
-    front: str = "0/front.jpg"
-    side: str = "0/side.jpg"
+(
+    svc,
+    segment_runner,
+    autoencoder_runner,
+    regression_runner,
+    segment_preprocess,
+    autoencoder_preprocess,
+) = load.svc(root_dir)
+s3 = load.s3(paths.S3_ACCESS_KEY_PATH)
 
 
 @svc.api(
-    input=JSON(pydantic_model=ImageS3Path), output=JSON(pydantic_model=ImageS3Path)
+    input=JSON(pydantic_model=feature.ImageS3Path),
+    output=JSON(pydantic_model=feature.ImageS3Path),
 )
-def masking_user(input: ImageS3Path) -> ImageS3Path:
+def masking_user(input: feature.ImageS3Path) -> feature.ImageS3Path:
     input = input.dict()
     front_path = input["front"]
     side_path = input["side"]
 
     front_masked_path = str(Path(front_path).parent / "front_masked.jpg")
     side_masked_path = str(Path(side_path).parent / "side_masked.jpg")
-    front = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=front_path)["Body"])
+    front = Image.open(
+        s3.get_object(Bucket=constant.BUCKET_NAME, Key=front_path)["Body"]
+    )
     front_size = front.size
-    side = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=side_path)["Body"])
+    side = Image.open(s3.get_object(Bucket=constant.BUCKET_NAME, Key=side_path)["Body"])
     side_size = side.size
 
     front = segment_preprocess(front).unsqueeze(0)
@@ -88,13 +66,13 @@ def masking_user(input: ImageS3Path) -> ImageS3Path:
     side_str = preprocess.to_bytearray(masked[1], side_size)
 
     s3.put_object(
-        Bucket=BUCKET_NAME,
+        Bucket=constant.BUCKET_NAME,
         Key=front_masked_path,
         Body=front_str,
         ContentType="image/jpg",
     )
     s3.put_object(
-        Bucket=BUCKET_NAME,
+        Bucket=constant.BUCKET_NAME,
         Key=side_masked_path,
         Body=side_str,
         ContentType="image/jpg",
@@ -103,37 +81,21 @@ def masking_user(input: ImageS3Path) -> ImageS3Path:
     return {"front": front_masked_path, "side": side_masked_path}
 
 
-class User(BaseModel):
-    front: str = "0/front_masked.jpg"
-    side: str = "0/side_masked.jpg"
-    height: float = 177
-    weight: float = 65
-    sex: str = "M"
-
-
-class UserSize(BaseModel):
-    height: float
-    chest_circumference: float
-    waist_circumference: float
-    hip_circumference: float
-    thigh_left_circumference: float
-    arm_left_length: float
-    inside_leg_height: float
-    shoulder_breadth: float
-
-
-@svc.api(input=JSON(pydantic_model=User), output=JSON(pydantic_model=UserSize))
-def human_size(input: User) -> UserSize:
+@svc.api(
+    input=JSON(pydantic_model=feature.User),
+    output=JSON(pydantic_model=feature.UserSize),
+)
+def human_size(input: feature.User) -> feature.UserSize:
     input = input.dict()
     front_path = input["front"]
     side_path = input["side"]
 
     front = Image.open(
-        s3.get_object(Bucket=BUCKET_NAME, Key=front_path)["Body"]
+        s3.get_object(Bucket=constant.BUCKET_NAME, Key=front_path)["Body"]
     ).convert("L")
-    side = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=side_path)["Body"]).convert(
-        "L"
-    )
+    side = Image.open(
+        s3.get_object(Bucket=constant.BUCKET_NAME, Key=side_path)["Body"]
+    ).convert("L")
 
     front = autoencoder_preprocess(front).unsqueeze(dim=0)
     side = autoencoder_preprocess(side).unsqueeze(dim=0)

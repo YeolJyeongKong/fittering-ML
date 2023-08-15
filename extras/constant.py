@@ -48,3 +48,7 @@ delta_j2d_hip_dev_range = [-8, 8]
 delta_verts2d_dev_range = [-0.01, 0.01]
 occlude_probability = 0.5
 occlude_box_dim = 48
+
+
+# ------------------------ aws ------------------------
+BUCKET_NAME = "fittering-measurements-images"
