@@ -15,68 +15,54 @@ import torchvision.transforms.functional as F
 import bentoml
 from bentoml.io import JSON
 import boto3
-import pyrootutils
+import pymysql
 from omegaconf import OmegaConf
 import hydra
 from pydantic import BaseModel
+import pyrootutils
 
 root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
-from extras import paths
+from extras import paths, constant
 from src.utils import preprocess
 from src.data.datamodule import DataModule
+from serving.bentoml import feature, load, rds_info
 
 
-# output_dir = "outputs/2023-08-03/15-45-06"
-output_dir = os.environ["OUTPUT_DIR"]
-cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
-
-segment_preprocess = hydra.utils.instantiate(cfg.preprocess.segment)
-segment_runner = bentoml.pytorch.get("segment:latest").to_runner()
-
-autoencoder_preprocess = hydra.utils.instantiate(cfg.preprocess.autoencoder)
-autoencoder_runner = bentoml.pytorch_lightning.get("autoencoder:latest").to_runner()
-del sys.modules["prometheus_client"]
-
-regression_runner = bentoml.sklearn.get("regression:latest").to_runner()
-
-svc = bentoml.Service(
-    "human_size_predict",
-    runners=[segment_runner, autoencoder_runner, regression_runner],
+(
+    svc,
+    segment_runner,
+    autoencoder_runner,
+    regression_runner,
+    segment_preprocess,
+    autoencoder_preprocess,
+) = load.svc(root_dir)
+s3 = load.s3(paths.S3_ACCESS_KEY_PATH)
+rds_conn = load.rds(
+    host=rds_info.host,
+    user=rds_info.user,
+    password=rds_info.password,
+    db=rds_info.db,
+    port=rds_info.port,
 )
-
-try:
-    s3_access_key = pd.read_csv(paths.S3_ACCESS_KEY_PATH)
-    s3 = boto3.client(
-        "s3",
-        aws_access_key_id=s3_access_key["Access key ID"].values[0],
-        aws_secret_access_key=s3_access_key["Secret access key"].values[0],
-        region_name="ap-northeast-2",
-    )
-except:
-    s3 = boto3.client("s3")
-
-BUCKET_NAME = "fittering-measurements-images"
-
-
-class ImageS3Path(BaseModel):
-    front: str = "0/front.jpg"
-    side: str = "0/side.jpg"
 
 
 @svc.api(
-    input=JSON(pydantic_model=ImageS3Path), output=JSON(pydantic_model=ImageS3Path)
+    input=JSON(pydantic_model=feature.ImageS3Path),
+    output=JSON(pydantic_model=feature.ImageS3Path),
 )
-def masking_user(input: ImageS3Path) -> ImageS3Path:
+def masking_user(input: feature.ImageS3Path) -> feature.ImageS3Path:
     input = input.dict()
     front_path = input["front"]
     side_path = input["side"]
 
     front_masked_path = str(Path(front_path).parent / "front_masked.jpg")
     side_masked_path = str(Path(side_path).parent / "side_masked.jpg")
-    front = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=front_path)["Body"])
+    front = Image.open(
+        s3.get_object(Bucket=constant.BUCKET_NAME, Key=front_path)["Body"]
+    )
     front_size = front.size
-    side = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=side_path)["Body"])
+    side = Image.open(s3.get_object(Bucket=constant.BUCKET_NAME, Key=side_path)["Body"])
     side_size = side.size
 
     front = segment_preprocess(front).unsqueeze(0)
@@ -88,13 +74,13 @@ def masking_user(input: ImageS3Path) -> ImageS3Path:
     side_str = preprocess.to_bytearray(masked[1], side_size)
 
     s3.put_object(
-        Bucket=BUCKET_NAME,
+        Bucket=constant.BUCKET_NAME,
         Key=front_masked_path,
         Body=front_str,
         ContentType="image/jpg",
     )
     s3.put_object(
-        Bucket=BUCKET_NAME,
+        Bucket=constant.BUCKET_NAME,
         Key=side_masked_path,
         Body=side_str,
         ContentType="image/jpg",
@@ -103,37 +89,21 @@ def masking_user(input: ImageS3Path) -> ImageS3Path:
     return {"front": front_masked_path, "side": side_masked_path}
 
 
-class User(BaseModel):
-    front: str = "0/front_masked.jpg"
-    side: str = "0/side_masked.jpg"
-    height: float = 177
-    weight: float = 65
-    sex: str = "M"
-
-
-class UserSize(BaseModel):
-    height: float
-    chest_circumference: float
-    waist_circumference: float
-    hip_circumference: float
-    thigh_left_circumference: float
-    arm_left_length: float
-    inside_leg_height: float
-    shoulder_breadth: float
-
-
-@svc.api(input=JSON(pydantic_model=User), output=JSON(pydantic_model=UserSize))
-def human_size(input: User) -> UserSize:
+@svc.api(
+    input=JSON(pydantic_model=feature.User),
+    output=JSON(pydantic_model=feature.UserSize),
+)
+def human_size(input: feature.User) -> feature.UserSize:
     input = input.dict()
     front_path = input["front"]
     side_path = input["side"]
 
     front = Image.open(
-        s3.get_object(Bucket=BUCKET_NAME, Key=front_path)["Body"]
+        s3.get_object(Bucket=constant.BUCKET_NAME, Key=front_path)["Body"]
     ).convert("L")
-    side = Image.open(s3.get_object(Bucket=BUCKET_NAME, Key=side_path)["Body"]).convert(
-        "L"
-    )
+    side = Image.open(
+        s3.get_object(Bucket=constant.BUCKET_NAME, Key=side_path)["Body"]
+    ).convert("L")
 
     front = autoencoder_preprocess(front).unsqueeze(dim=0)
     side = autoencoder_preprocess(side).unsqueeze(dim=0)
@@ -159,3 +129,35 @@ def human_size(input: User) -> UserSize:
         "inside_leg_height": pred[0][6],
         "shoulder_breadth": pred[0][7],
     }
+
+
+@svc.api(
+    input=JSON(pydantic_model=feature.Product_Input),
+    output=JSON(pydantic_model=feature.Product_Output),
+)
+def item_base_recommendation(input: feature.Product_Input) -> feature.Product_Output:
+    top_k = 2
+    recommendation_n = 2
+
+    product_dict = input.dict()
+    product_ids = product_dict["product_ids"]
+    product_gender = product_dict["gender"]
+
+    if not product_ids:
+        cursor = rds_conn.cursor()
+        query = f"""
+            SELECT * FROM product
+        """
+        cursor.execute(query)
+        products = cursor.fetchall()
+        products_df = pd.DataFrame(products)
+
+        product_top_view = products_df[
+            products_df["gender"] == product_gender
+        ].sort_values(by="view", ascending=False)
+
+        recommendation_products = (
+            product_top_view[:top_k]["product_id"].sample(n=recommendation_n).to_list()
+        )
+
+    return {"product_id": recommendation_products}
