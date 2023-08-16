@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import List
 
 
 class ImageS3Path(BaseModel):
@@ -23,3 +24,12 @@ class UserSize(BaseModel):
     arm_left_length: float
     inside_leg_height: float
     shoulder_breadth: float
+
+
+class Product_Input(BaseModel):
+    product_ids: List[int] = [1, 2, 3, 4, 5, 6, 7, 8]
+    gender: str = "M"
+
+
+class Product_Output(BaseModel):
+    product_ids: List[int] = [1, 2, 3, 4, 5, 6, 7, 8]

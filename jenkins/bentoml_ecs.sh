@@ -1,5 +1,5 @@
 #!/bin/bash
-read -p "output dir: " OUTPUT_DIR
+read -p "relative output dir: " OUTPUT_DIR
 
 # 입력이 없으면 스크립트를 종료
 if [ -z "$OUTPUT_DIR" ]; then
@@ -20,5 +20,5 @@ docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict
 
 # ecs service update
 CLUSTER_NAME=human-size-predict-cluster
-SERVICE_NAME=human-size-predict-service
+SERVICE_NAME=human-size-predict-cluster
 aws ecs update-service --cluster ${CLUSTER_NAME} --service ${SERVICE_NAME} --force-new-deployment

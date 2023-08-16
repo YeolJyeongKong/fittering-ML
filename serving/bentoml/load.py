@@ -4,6 +4,7 @@ import pandas as pd
 import bentoml
 import hydra
 import boto3
+import pymysql
 from omegaconf import OmegaConf
 
 
@@ -47,3 +48,17 @@ def s3(s3_access_key_path):
         s3 = boto3.client("s3")
 
     return s3
+
+
+def rds(host, user, password, db, port):
+    rds = pymysql.connect(
+        host=host,
+        user=user,
+        password=password,
+        db=db,
+        charset="utf8",
+        port=port,
+        autocommit=True,
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+    return rds
