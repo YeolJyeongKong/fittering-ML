@@ -137,3 +137,32 @@ class AihubOriDataset(Dataset):
             [json_data["input"]["front"], json_data["input"]["side"]],
             [front_shape, side_shape],
         )
+
+
+class FashionDataset(Dataset):
+    def __init__(self, df, root_img_dir, transform):
+        super().__init__()
+        self.df = df
+        self.root_img_dir = root_img_dir
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, index):
+        row = self.df.iloc[index]
+
+        img = plt.imread(os.path.join(self.root_img_dir, (row["image_name"])))
+        h, w = img.shape[0], img.shape[1]
+        bbox = []
+        bbox += [row["x_1"] / w]
+        bbox += [row["y_1"] / h]
+        bbox += [row["x_2"] / w]
+        bbox += [row["y_2"] / h]
+
+        if self.transform:
+            img = self.transform(img)
+        category = torch.tensor(row["category_label"])
+        bbox = torch.tensor(bbox)
+
+        return (img, category, bbox)

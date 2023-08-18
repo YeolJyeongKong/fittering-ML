@@ -23,6 +23,12 @@ MODEL_WEIGHTS_DIR = os.path.join(ROOT_DIR, "./model_weights")
 SEGMODEL_PATH = os.path.join(MODEL_WEIGHTS_DIR, "SGHM-ResNet50.pth")
 
 # ------------------------ data ------------------------
+# fashion dataset
+FASHION_DATA_DIR = (
+    "/media/shin/T7/fashion_dataset/Category_and_Attribute_Prediction_Benchmark"
+)
+
+# data root dir
 DATA_DIR = os.path.join(ROOT_DIR, "./data")
 
 # aihub data

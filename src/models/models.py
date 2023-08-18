@@ -233,7 +233,7 @@ class ProductClassifyBox(nn.Module):
     def __init__(self):
         super().__init__()
         self.encoder = ProductImageEncode()
-        self.fc_classify = nn.Linear(64, 6)
+        self.fc_classify = nn.Linear(64, 50)
         self.fc_box = nn.Linear(64, 4)
 
     def forward(self, x):
