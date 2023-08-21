@@ -10,4 +10,4 @@ fi
 export OUTPUT_DIR
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate fittering-measurements-cpu
-bentoml serve serving.bentoml.service:svc --development --reload
+bentoml serve serving.bentoml.service_fashion_cbf:svc --development --reload

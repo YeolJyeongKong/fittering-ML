@@ -10,6 +10,7 @@ from hydra.core.hydra_config import HydraConfig
 from pytorch_lightning.utilities import rank_zero_only
 from omegaconf import DictConfig, OmegaConf, open_dict
 from rich.prompt import Prompt
+import cv2
 
 
 @rank_zero_only
@@ -62,3 +63,26 @@ def print_wandb_run(cfg: DictConfig):
         file.write(f"run url: {wandb.run.get_url()}\n")
         file.write(f"run id: {wandb.run.id}\n")
         file.write(f"run name: {wandb.run.name}")
+
+
+def draw_bbox(img, pred_bbox, label_bbox):
+    img = img.copy().transpose(1, 2, 0)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    h, w = img.shape[:2]
+    cv2.rectangle(
+        img,
+        (int(pred_bbox[0] * w), int(pred_bbox[1] * h)),
+        (int(pred_bbox[2] * w), int(pred_bbox[3] * h)),
+        (0, 0, 1.0),
+        thickness=1,
+    )
+    cv2.rectangle(
+        img,
+        (int(label_bbox[0] * w), int(label_bbox[1] * h)),
+        (int(label_bbox[2] * w), int(label_bbox[3] * h)),
+        (0, 1.0, 0),
+        thickness=1,
+    )
+
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    return img

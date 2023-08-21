@@ -52,3 +52,5 @@ occlude_box_dim = 48
 
 # ------------------------ aws ------------------------
 BUCKET_NAME = "fittering-measurements-images"
+
+S3_URL = "https://fittering-measurements-images.s3.ap-northeast-2.amazonaws.com"

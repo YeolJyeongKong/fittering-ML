@@ -4,6 +4,7 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.types import EPOCH_OUTPUT
 import torchmetrics
 from torchmetrics import MeanAbsoluteError, Accuracy
+from torchmetrics.classification import MulticlassAccuracy
 
 import wandb
 
@@ -17,6 +18,7 @@ from src.models.models import (
     EfficientNetv2,
     SimpleNet,
     CombAutoEncoder,
+    ProductClassifyBox,
 )
 from src.utils.metrics import AccuracyBinaryImage, MeasureMAE
 
@@ -228,6 +230,92 @@ class AutoEncoderModule(pl.LightningModule):
 
         self.log("test_loss", loss, prog_bar=True)
         self.log("test_acc", acc, prog_bar=True)
+
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        return optimizer
+
+
+class ProductModule(pl.LightningModule):
+    def __init__(self, learning_rate=1e-4, bbox_loss_weight=1.0):
+        super().__init__()
+        self.learning_rate = learning_rate
+        self.bbox_loss_weight = bbox_loss_weight
+
+        self.save_hyperparameters()
+
+        self.model = ProductClassifyBox()
+
+        self.acc = Accuracy(task="multiclass", num_classes=50)
+        self.mae = MeanAbsoluteError()
+
+    def forward(self, x):
+        return self.model.encoder(x)
+
+    def training_step(self, batch, batch_idx):
+        img = batch[0]
+        label_class = batch[1]
+        label_bbox = batch[2]
+
+        pred_class, pred_bbox = self.model(img)
+        loss_class = F.cross_entropy(pred_class, label_class)
+        loss_bbox = F.mse_loss(pred_bbox, label_bbox)
+        loss = loss_class + self.bbox_loss_weight * loss_bbox
+
+        acc = self.acc(pred_class, label_class)
+        mae = self.mae(pred_bbox, label_bbox)
+
+        self.log(
+            "train_class_loss", loss_class, on_step=True, on_epoch=True, logger=True
+        )
+        self.log("train_bbox_loss", loss_bbox, on_step=True, on_epoch=True, logger=True)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, logger=True)
+        self.log("train_acc", acc, on_step=True, on_epoch=True, logger=True)
+        self.log("train_mae", mae, on_step=True, on_epoch=True, logger=True)
+
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        img = batch[0]
+        label_class = batch[1]
+        label_bbox = batch[2]
+
+        pred_class, pred_bbox = self.model(img)
+        loss_class = F.cross_entropy(pred_class, label_class)
+        loss_bbox = F.mse_loss(pred_bbox, label_bbox)
+        loss = loss_class + loss_bbox
+
+        acc = self.acc(pred_class, label_class)
+        mae = self.mae(pred_bbox, label_bbox)
+
+        self.log("train_class_loss", loss_class, prog_bar=True)
+        self.log("val_bbox_loss", loss_bbox, prog_bar=True)
+        self.log("val_loss", loss, prog_bar=True)
+        self.log("val_acc", acc, prog_bar=True)
+        self.log("val_mae", mae, prog_bar=True)
+
+        return loss
+
+    def test_step(self, batch, batch_idx):
+        img = batch[0]
+        label_class = batch[1]
+        label_bbox = batch[2]
+
+        pred_class, pred_bbox = self.model(img)
+        loss_class = F.cross_entropy(pred_class, label_class)
+        loss_bbox = F.mse_loss(pred_bbox, label_bbox)
+        loss = loss_class + loss_bbox
+
+        acc = self.acc(pred_class, label_class)
+        mae = self.mae(pred_bbox, label_bbox)
+
+        self.log("test_class_loss", loss_class, prog_bar=True)
+        self.log("test_bbox_loss", loss_bbox, prog_bar=True)
+        self.log("test_loss", loss, prog_bar=True)
+        self.log("test_acc", acc, prog_bar=True)
+        self.log("test_mae", mae, prog_bar=True)
 
         return loss
 

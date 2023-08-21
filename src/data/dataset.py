@@ -152,7 +152,7 @@ class FashionDataset(Dataset):
     def __getitem__(self, index):
         row = self.df.iloc[index]
 
-        img = plt.imread(os.path.join(self.root_img_dir, (row["image_name"])))
+        img = plt.imread(os.path.join(self.root_img_dir, row["image_name"]))
         h, w = img.shape[0], img.shape[1]
         bbox = []
         bbox += [row["x_1"] / w]
@@ -163,6 +163,6 @@ class FashionDataset(Dataset):
         if self.transform:
             img = self.transform(img)
         category = torch.tensor(row["category_label"])
-        bbox = torch.tensor(bbox)
+        bbox = torch.tensor(bbox, dtype=torch.float32)
 
         return (img, category, bbox)

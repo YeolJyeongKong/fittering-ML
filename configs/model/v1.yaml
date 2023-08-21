@@ -12,3 +12,8 @@ regression:
   alpha: 0.2
   kernel: poly
   degree: 3
+
+product_encode:
+  _target_: src.models.lightning_modules.ProductModule
+  learning_rate: 1e-4
+  bbox_loss_weight: 1.0

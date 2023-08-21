@@ -8,7 +8,7 @@ import pymysql
 from omegaconf import OmegaConf
 
 
-def svc(root_dir):
+def human_size_svc(root_dir):
     output_dir = os.environ["OUTPUT_DIR"]
     cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
 
@@ -33,6 +33,21 @@ def svc(root_dir):
         segment_preprocess,
         autoencoder_preprocess,
     )
+
+
+def product_recommendation_svc(root_dir):
+    output_dir = os.environ["OUTPUT_DIR"]
+    cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
+
+    product_encode_preprocess = hydra.utils.instantiate(cfg.preprocess.product_encode)
+    product_encode_runner = bentoml.pytorch.get("product_encode:latest").to_runner()
+    del sys.modules["prometheus_client"]
+
+    svc = bentoml.Service(
+        "product_recommendation",
+        runners=[product_encode_runner],
+    )
+    return (svc, product_encode_runner, product_encode_preprocess)
 
 
 def s3(s3_access_key_path):

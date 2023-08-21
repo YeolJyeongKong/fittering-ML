@@ -36,15 +36,8 @@ from serving.bentoml import feature, load, rds_info
     regression_runner,
     segment_preprocess,
     autoencoder_preprocess,
-) = load.svc(root_dir)
+) = load.human_size_svc(root_dir)
 s3 = load.s3(paths.S3_ACCESS_KEY_PATH)
-rds_conn = load.rds(
-    host=rds_info.host,
-    user=rds_info.user,
-    password=rds_info.password,
-    db=rds_info.db,
-    port=rds_info.port,
-)
 
 
 @svc.api(
@@ -129,35 +122,3 @@ def human_size(input: feature.User) -> feature.UserSize:
         "inside_leg_height": pred[0][6],
         "shoulder_breadth": pred[0][7],
     }
-
-
-@svc.api(
-    input=JSON(pydantic_model=feature.Product_Input),
-    output=JSON(pydantic_model=feature.Product_Output),
-)
-def item_base_recommendation(input: feature.Product_Input) -> feature.Product_Output:
-    top_k = 2
-    recommendation_n = 2
-
-    product_dict = input.dict()
-    product_ids = product_dict["product_ids"]
-    product_gender = product_dict["gender"]
-
-    if not product_ids:
-        cursor = rds_conn.cursor()
-        query = f"""
-            SELECT * FROM product
-        """
-        cursor.execute(query)
-        products = cursor.fetchall()
-        products_df = pd.DataFrame(products)
-
-        product_top_view = products_df[
-            products_df["gender"] == product_gender
-        ].sort_values(by="view", ascending=False)
-
-        recommendation_products = (
-            product_top_view[:top_k]["product_id"].sample(n=recommendation_n).to_list()
-        )
-
-    return {"product_id": recommendation_products}

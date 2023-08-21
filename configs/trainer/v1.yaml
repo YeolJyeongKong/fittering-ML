@@ -4,3 +4,10 @@ autoencoder:
   max_epochs: 15
   accelerator: gpu
   devices: 1
+
+product_encode:
+  _target_: pytorch_lightning.Trainer
+  min_epochs: 1
+  max_epochs: 1
+  accelerator: gpu
+  devices: 1

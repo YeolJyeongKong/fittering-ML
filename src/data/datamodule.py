@@ -97,7 +97,7 @@ class DataModule(pl.LightningDataModule):
         return DataLoader(self.val_dataset, batch_size=self.batch_size)
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size)
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=8)
 
 
 class FashionDataModule(pl.LightningDataModule):
@@ -162,16 +162,15 @@ class FashionDataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(
-            self.train_dataset, 
-            batch_size=self.batch_size, 
+            self.train_dataset,
+            batch_size=self.batch_size,
             shuffle=True,
-            num_workers=self.num_workers, 
-            pin_memory=self.pin_memory, 
-            shuffle=True
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
         )
-    
+
     def val_dataloader(self):
         return DataLoader(self.val_dataset, batch_size=self.batch_size)
-    
+
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size)
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=8)

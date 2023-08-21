@@ -15,6 +15,7 @@ from torchvision.transforms import functional as F
 from src.data.preprocess import *
 from src.utils.visualize import Beta2Verts
 from src.utils.predict_measure import Beta2Measurements
+from src.utils.utils import draw_bbox
 
 from extras import paths
 
@@ -158,5 +159,37 @@ class RealDataPredictLogger(Callback):
             {
                 "real predict measurements": wandb.Table(dataframe=pred_meas),
                 "real target measurements": wandb.Table(dataframe=target_meas),
+            }
+        )
+
+
+class ProductLogger(Callback):
+    def __init__(self, val_samples, idx2category):
+        super().__init__()
+        self.val_samples = val_samples
+        self.idx2category = idx2category
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        img = self.val_samples[0].to(pl_module.device)
+        label_class = self.val_samples[1].numpy()
+        label_bbox = self.val_samples[2].numpy()
+
+        pred_class, pred_bbox = pl_module.model(img)
+        pred_class = pred_class.cpu().numpy()
+        pred_bbox = pred_bbox.cpu().numpy()
+
+        class_df = pd.DataFrame(
+            {"pred": pred_class.argmax(axis=1), "target": label_class}
+        )
+
+        trainer.logger.experiment.log(
+            {
+                "bbox result": [
+                    wandb.Image(draw_bbox(img_, pred_bbox_, label_bbox_))
+                    for img_, pred_bbox_, label_bbox_ in zip(
+                        img.cpu().numpy(), pred_bbox, label_bbox
+                    )
+                ],
+                "class result": wandb.Table(dataframe=class_df),
             }
         )

@@ -1,21 +1,20 @@
-service: "serving.bentoml.service:svc"
-labels: 
+service: serving.bentoml.service_fashion_cbf:svc
+labels:
   owner: yeoljyeongkong
   stage: dev
-exclude:
-  - "test/"
-  - "outputs/*/*/models"
-  - "outputs/*/*/wandb"
-  - "model_weights/"
-  - "data/aihub"
-  - "data/synthetic"
-python: 
-  requirements_txt: "./serving/bentoml/requirements.serving.txt"
+include:
+- extras/
+- configs/
+- serving/
+- src/
+- .project-root
+python:
+  requirements_txt: ./serving/bentoml/requirements.serving.txt
 models:
-  - "segment:latest"
-  - "autoencoder:latest"
-  - "regression:latest"
+- product_encode:pixyxcb7e6gdy5cw
 docker:
   system_packages:
-    - libgl1-mesa-glx
-    - libglib2.0-0
+  - libgl1-mesa-glx
+  - libglib2.0-0
+  env:
+    OUTPUT_DIR: outputs/2023-08-20/15-58-19

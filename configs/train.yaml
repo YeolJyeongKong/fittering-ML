@@ -5,3 +5,5 @@ defaults:
   - logger: wandb.yaml
   - paths: default.yaml
   - preprocess: v1.yaml
+
+train: human_size
