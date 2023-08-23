@@ -21,12 +21,14 @@ import hydra
 from pydantic import BaseModel
 import pyrootutils
 
+from serving.bentoml.utils import feature, load
+
 root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
 from extras import paths, constant
 from src.utils import preprocess
 from src.data.datamodule import DataModule
-from serving.bentoml import feature, load, rds_info
+from serving.bentoml import rds_info
 
 
 (
@@ -52,10 +54,12 @@ def masking_user(input: feature.ImageS3Path) -> feature.ImageS3Path:
     front_masked_path = str(Path(front_path).parent / "front_masked.jpg")
     side_masked_path = str(Path(side_path).parent / "side_masked.jpg")
     front = Image.open(
-        s3.get_object(Bucket=constant.BUCKET_NAME, Key=front_path)["Body"]
+        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=front_path)["Body"]
     )
     front_size = front.size
-    side = Image.open(s3.get_object(Bucket=constant.BUCKET_NAME, Key=side_path)["Body"])
+    side = Image.open(
+        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=side_path)["Body"]
+    )
     side_size = side.size
 
     front = segment_preprocess(front).unsqueeze(0)
@@ -67,13 +71,13 @@ def masking_user(input: feature.ImageS3Path) -> feature.ImageS3Path:
     side_str = preprocess.to_bytearray(masked[1], side_size)
 
     s3.put_object(
-        Bucket=constant.BUCKET_NAME,
+        Bucket=constant.BUCKET_NAME_HUMAN,
         Key=front_masked_path,
         Body=front_str,
         ContentType="image/jpg",
     )
     s3.put_object(
-        Bucket=constant.BUCKET_NAME,
+        Bucket=constant.BUCKET_NAME_HUMAN,
         Key=side_masked_path,
         Body=side_str,
         ContentType="image/jpg",
@@ -92,10 +96,10 @@ def human_size(input: feature.User) -> feature.UserSize:
     side_path = input["side"]
 
     front = Image.open(
-        s3.get_object(Bucket=constant.BUCKET_NAME, Key=front_path)["Body"]
+        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=front_path)["Body"]
     ).convert("L")
     side = Image.open(
-        s3.get_object(Bucket=constant.BUCKET_NAME, Key=side_path)["Body"]
+        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=side_path)["Body"]
     ).convert("L")
 
     front = autoencoder_preprocess(front).unsqueeze(dim=0)

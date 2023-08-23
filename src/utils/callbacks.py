@@ -172,15 +172,31 @@ class ProductLogger(Callback):
     def on_validation_epoch_end(self, trainer, pl_module):
         img = self.val_samples[0].to(pl_module.device)
         label_class = self.val_samples[1].numpy()
+        label_class = [self.idx2category[idx] for idx in label_class]
+
         label_bbox = self.val_samples[2].numpy()
 
-        pred_class, pred_bbox = pl_module.model(img)
+        encode = pl_module(img)
+        pred_class = pl_module.model.fc_classify(encode)
+        pred_bbox = pl_module.model.fc_box(encode)
+
+        encode = encode.cpu().numpy()
+
         pred_class = pred_class.cpu().numpy()
+        pred_class = pred_class.argmax(axis=1)
+        pred_class = [self.idx2category[idx] for idx in pred_class]
+
         pred_bbox = pred_bbox.cpu().numpy()
 
-        class_df = pd.DataFrame(
-            {"pred": pred_class.argmax(axis=1), "target": label_class}
-        )
+        class_df = pd.DataFrame({"pred": pred_class, "target": label_class})
+        embedding_df = pd.DataFrame(encode)
+        embedding_df["target"] = label_class
+        embedding_df["image"] = [
+            wandb.Image(img_) for img_ in img.cpu().numpy().transpose(0, 2, 3, 1)
+        ]
+        embedding_df.columns = [str(col) for col in embedding_df.columns.tolist()]
+        cols = embedding_df.columns.tolist()
+        cols = [str(col) for col in cols]
 
         trainer.logger.experiment.log(
             {
@@ -191,5 +207,6 @@ class ProductLogger(Callback):
                     )
                 ],
                 "class result": wandb.Table(dataframe=class_df),
+                "embedding": wandb.Table(dataframe=embedding_df),
             }
         )

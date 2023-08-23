@@ -27,7 +27,7 @@ def train_ProductModule(cfg: DictConfig):
     wandb_logger = hydra.utils.instantiate(cfg.logger.product_encode)
     utils.print_wandb_run(cfg)
 
-    val_samples = next(iter(dm.val_dataloader()))
+    val_samples = next(iter(dm.callback_dataloader()))
 
     trainer = hydra.utils.instantiate(
         cfg.trainer.product_encode,

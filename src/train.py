@@ -33,7 +33,10 @@ def human_size_main(cfg: DictConfig) -> None:
         autoencoder_tag,
         regression_tag,
     ]
-    bentofile.docker.env.OUTPUT_DIR = os.path.relpath(cfg.paths.output_dir, root_dir)
+
+    output_dir = os.path.relpath(cfg.paths.output_dir, root_dir)
+    bentofile.include += [output_dir]
+    bentofile.docker.env.OUTPUT_DIR = output_dir
 
     return bentofile
 

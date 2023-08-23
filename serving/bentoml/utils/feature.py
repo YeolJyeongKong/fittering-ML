@@ -27,9 +27,9 @@ class UserSize(BaseModel):
 
 
 class Product_Input(BaseModel):
-    product_ids: List[int] = [1, 2, 3, 4, 5, 6, 7, 8]
+    product_ids: List[int] = [1, 2, 3]
     gender: str = "M"
 
 
 class Product_Output(BaseModel):
-    product_ids: List[int] = [1, 2, 3, 4, 5, 6, 7, 8]
+    product_ids: List[int]

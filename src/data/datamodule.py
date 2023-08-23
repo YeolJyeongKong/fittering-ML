@@ -106,12 +106,14 @@ class FashionDataModule(pl.LightningDataModule):
         transform,
         data_dir=paths.FASHION_DATA_DIR,
         batch_size=8,
+        callback_batch_size=64,
         num_workers=0,
         pin_memory=False,
     ):
         super().__init__()
         self.transform = transform
         self.batch_size = batch_size
+        self.callback_batch_size = callback_batch_size
         self.num_workers = num_workers
         self.pin_memory = pin_memory
 
@@ -171,6 +173,9 @@ class FashionDataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         return DataLoader(self.val_dataset, batch_size=self.batch_size)
+
+    def callback_dataloader(self):
+        return DataLoader(self.val_dataset, batch_size=self.callback_batch_size)
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=8)

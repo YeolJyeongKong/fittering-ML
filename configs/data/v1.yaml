@@ -11,6 +11,7 @@ autoencoder:
 product_encode:
   _target_: src.data.datamodule.FashionDataModule
   batch_size: 32
+  callback_batch_size: 128
   num_workers: 8
   pin_memory: true
   transform: ${preprocess.product_encode}

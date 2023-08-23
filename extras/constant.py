@@ -51,6 +51,7 @@ occlude_box_dim = 48
 
 
 # ------------------------ aws ------------------------
-BUCKET_NAME = "fittering-measurements-images"
+BUCKET_NAME_HUMAN = "fittering-measurements-images"
+S3_URL_HUMAN = "https://fittering-measurements-images.s3.ap-northeast-2.amazonaws.com"
 
-S3_URL = "https://fittering-measurements-images.s3.ap-northeast-2.amazonaws.com"
+BUCKET_NAME_PRODUCT = "fittering-crawling-image"
