@@ -1,6 +1,5 @@
 from src.utils.callbacks import (
     ImagePredictionLogger,
-    BetaPredictionLogger,
     MeasurementsLogger,
     RealDataPredictLogger,
     ProductLogger,
