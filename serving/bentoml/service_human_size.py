@@ -21,12 +21,14 @@ import hydra
 from pydantic import BaseModel
 import pyrootutils
 
+from serving.bentoml.utils import feature, load
+
 root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
 from extras import paths, constant
 from src.utils import preprocess
 from src.data.datamodule import DataModule
-from serving.bentoml import feature, load, rds_info
+from serving.bentoml import rds_info
 
 
 (
@@ -36,15 +38,8 @@ from serving.bentoml import feature, load, rds_info
     regression_runner,
     segment_preprocess,
     autoencoder_preprocess,
-) = load.svc(root_dir)
+) = load.human_size_svc(root_dir)
 s3 = load.s3(paths.S3_ACCESS_KEY_PATH)
-rds_conn = load.rds(
-    host=rds_info.host,
-    user=rds_info.user,
-    password=rds_info.password,
-    db=rds_info.db,
-    port=rds_info.port,
-)
 
 
 @svc.api(
@@ -59,10 +54,12 @@ def masking_user(input: feature.ImageS3Path) -> feature.ImageS3Path:
     front_masked_path = str(Path(front_path).parent / "front_masked.jpg")
     side_masked_path = str(Path(side_path).parent / "side_masked.jpg")
     front = Image.open(
-        s3.get_object(Bucket=constant.BUCKET_NAME, Key=front_path)["Body"]
+        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=front_path)["Body"]
     )
     front_size = front.size
-    side = Image.open(s3.get_object(Bucket=constant.BUCKET_NAME, Key=side_path)["Body"])
+    side = Image.open(
+        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=side_path)["Body"]
+    )
     side_size = side.size
 
     front = segment_preprocess(front).unsqueeze(0)
@@ -74,13 +71,13 @@ def masking_user(input: feature.ImageS3Path) -> feature.ImageS3Path:
     side_str = preprocess.to_bytearray(masked[1], side_size)
 
     s3.put_object(
-        Bucket=constant.BUCKET_NAME,
+        Bucket=constant.BUCKET_NAME_HUMAN,
         Key=front_masked_path,
         Body=front_str,
         ContentType="image/jpg",
     )
     s3.put_object(
-        Bucket=constant.BUCKET_NAME,
+        Bucket=constant.BUCKET_NAME_HUMAN,
         Key=side_masked_path,
         Body=side_str,
         ContentType="image/jpg",
@@ -99,10 +96,10 @@ def human_size(input: feature.User) -> feature.UserSize:
     side_path = input["side"]
 
     front = Image.open(
-        s3.get_object(Bucket=constant.BUCKET_NAME, Key=front_path)["Body"]
+        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=front_path)["Body"]
     ).convert("L")
     side = Image.open(
-        s3.get_object(Bucket=constant.BUCKET_NAME, Key=side_path)["Body"]
+        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=side_path)["Body"]
     ).convert("L")
 
     front = autoencoder_preprocess(front).unsqueeze(dim=0)
@@ -129,35 +126,3 @@ def human_size(input: feature.User) -> feature.UserSize:
         "inside_leg_height": pred[0][6],
         "shoulder_breadth": pred[0][7],
     }
-
-
-@svc.api(
-    input=JSON(pydantic_model=feature.Product_Input),
-    output=JSON(pydantic_model=feature.Product_Output),
-)
-def item_base_recommendation(input: feature.Product_Input) -> feature.Product_Output:
-    top_k = 2
-    recommendation_n = 2
-
-    product_dict = input.dict()
-    product_ids = product_dict["product_ids"]
-    product_gender = product_dict["gender"]
-
-    if not product_ids:
-        cursor = rds_conn.cursor()
-        query = f"""
-            SELECT * FROM product
-        """
-        cursor.execute(query)
-        products = cursor.fetchall()
-        products_df = pd.DataFrame(products)
-
-        product_top_view = products_df[
-            products_df["gender"] == product_gender
-        ].sort_values(by="view", ascending=False)
-
-        recommendation_products = (
-            product_top_view[:top_k]["product_id"].sample(n=recommendation_n).to_list()
-        )
-
-    return {"product_id": recommendation_products}

@@ -14,3 +14,9 @@ autoencoder:
     - _target_: torchvision.transforms.Resize
       size: [512, 512]
 
+product_encode:
+  _target_: torchvision.transforms.Compose
+  transforms: 
+    - _target_: torchvision.transforms.ToTensor
+    - _target_: torchvision.transforms.Resize
+      size: [128, 128]

@@ -211,3 +211,31 @@ class CombAutoEncoder(nn.Module):
 
     def forward(self, front, side):
         return self.frontae(front), self.sideae(side)
+
+
+class ProductImageEncode(nn.Module):
+    def __init__(self):
+        super().__init__()
+        base = efficientnet.from_name("efficientnet-b0")
+        base._blocks = nn.Sequential(*base._blocks)
+
+        layers = list(base.children())[:-6]
+        layers += [nn.Conv2d(320, 64, kernel_size=1, stride=1, padding=0, bias=False)]
+        layers += [nn.BatchNorm2d(64)]
+        layers += [nn.AdaptiveAvgPool2d(1)]
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.net(x).flatten(1)
+
+
+class ProductClassifyBox(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encoder = ProductImageEncode()
+        self.fc_classify = nn.Linear(64, 50)
+        self.fc_box = nn.Linear(64, 4)
+
+    def forward(self, x):
+        x = self.encoder(x)
+        return self.fc_classify(x), self.fc_box(x)

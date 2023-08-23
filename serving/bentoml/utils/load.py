@@ -4,11 +4,12 @@ import pandas as pd
 import bentoml
 import hydra
 import boto3
+import aiobotocore
 import pymysql
 from omegaconf import OmegaConf
 
 
-def svc(root_dir):
+def human_size_svc(root_dir):
     output_dir = os.environ["OUTPUT_DIR"]
     cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
 
@@ -35,6 +36,21 @@ def svc(root_dir):
     )
 
 
+def product_recommendation_svc(root_dir):
+    output_dir = os.environ["OUTPUT_DIR"]
+    cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
+
+    product_encode_preprocess = hydra.utils.instantiate(cfg.preprocess.product_encode)
+    product_encode_runner = bentoml.pytorch.get("product_encode:latest").to_runner()
+    # del sys.modules["prometheus_client"]
+
+    svc = bentoml.Service(
+        "product_recommendation",
+        runners=[product_encode_runner],
+    )
+    return (svc, product_encode_runner, product_encode_preprocess)
+
+
 def s3(s3_access_key_path):
     try:
         s3_access_key = pd.read_csv(s3_access_key_path)
@@ -47,6 +63,18 @@ def s3(s3_access_key_path):
     except:
         s3 = boto3.client("s3")
 
+    return s3
+
+
+def aios3(s3_access_key_path):
+    s3_access_key = pd.read_csv(s3_access_key_path)
+    session = aiobotocore.get_session()
+    s3 = session.create_client(
+        "s3",
+        aws_access_key_id=s3_access_key["Access key ID"].values[0],
+        aws_secret_access_key=s3_access_key["Secret access key"].values[0],
+        region_name="ap-northeast-2",
+    )
     return s3
 
 
