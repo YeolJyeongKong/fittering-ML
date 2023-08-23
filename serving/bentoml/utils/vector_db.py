@@ -8,11 +8,10 @@ from pymilvus import (
     Collection,
 )
 
-connections.connect("default", host="localhost", port="19530")
-
 
 def save_vector(embedded, product_id, gender):
-    connections.connect("default", host="localhost", port="19530")
+    connections.connect("default", host="13.125.214.45", port="19530")
+    # connections.connect("default", host="localhost", port="19530")
     if utility.has_collection("image_vector_db"):
         utility.drop_collection("image_vector_db")
 
@@ -50,7 +49,8 @@ def save_vector(embedded, product_id, gender):
 
 
 def search_vector(product_ids, gender, top_k, recommendation_n):
-    connections.connect("default", host="localhost", port="19530")
+    connections.connect("default", host="13.125.214.45", port="19530")
+    # connections.connect("default", host="localhost", port="19530")
     image_vector_db = Collection("image_vector_db")
     image_vector_db.load()
 

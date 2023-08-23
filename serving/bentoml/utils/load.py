@@ -42,7 +42,7 @@ def product_recommendation_svc(root_dir):
 
     product_encode_preprocess = hydra.utils.instantiate(cfg.preprocess.product_encode)
     product_encode_runner = bentoml.pytorch.get("product_encode:latest").to_runner()
-    del sys.modules["prometheus_client"]
+    # del sys.modules["prometheus_client"]
 
     svc = bentoml.Service(
         "product_recommendation",

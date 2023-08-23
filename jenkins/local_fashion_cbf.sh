@@ -9,5 +9,6 @@ fi
 
 export OUTPUT_DIR
 source ~/anaconda3/etc/profile.d/conda.sh
-conda activate fittering-measurements-cpu
+# conda activate fittering-measurements-cpu
+conda activate test2-env
 bentoml serve serving.bentoml.service_fashion_cbf:svc --development --reload

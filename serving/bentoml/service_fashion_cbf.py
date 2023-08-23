@@ -14,7 +14,6 @@ import torch
 import torchvision.transforms.functional as F
 import bentoml
 from bentoml.io import JSON
-import boto3
 import asyncio
 import pymysql
 from omegaconf import OmegaConf
@@ -26,16 +25,12 @@ from serving.bentoml.utils import feature, load, s3_image, vector_db
 
 root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
-from extras import paths, constant
-from src.data.datamodule import DataModule
 from serving.bentoml import rds_info
 
 
 svc, product_encode_runner, product_encode_preprocess = load.product_recommendation_svc(
     root_dir
 )
-
-# s3 = load.aios3(paths.S3_ACCESS_KEY_PATH)
 
 rds_conn = load.rds(
     host=rds_info.host,
@@ -77,7 +72,6 @@ def product_encode(input: Dict[str, Any]) -> Dict[str, Any]:
     output=JSON(pydantic_model=feature.Product_Output),
 )
 def fashion_cbf(input: feature.Product_Input) -> feature.Product_Output:
-    print("-----------------------------------------------------")
     top_k = 3
     recommendation_n = 2
 

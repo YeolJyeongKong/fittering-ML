@@ -27,6 +27,7 @@ def human_size_main(cfg: DictConfig) -> None:
     )
 
     bentofile = OmegaConf.load(paths.BENTOFILE_DEFAULT_PATH)
+    bentofile.python.requirements_txt = "requirements.human_size.txt"
     bentofile.service = "serving.bentoml.service_human_size:svc"
     bentofile.models = [
         segment_tag,
@@ -44,6 +45,7 @@ def human_size_main(cfg: DictConfig) -> None:
 def product_encode_main(cfg: DictConfig):
     product_tag = product_encode_trainer.train_ProductModule(cfg)
     bentofile = OmegaConf.load(paths.BENTOFILE_DEFAULT_PATH)
+    bentofile.python.requirements_txt = "requirements.fashion_cbf.txt"
     bentofile.service = "serving.bentoml.service_fashion_cbf:svc"
     bentofile.models = [product_tag]
     output_dir = os.path.relpath(cfg.paths.output_dir, root_dir)
