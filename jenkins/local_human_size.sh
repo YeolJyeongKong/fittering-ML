@@ -9,6 +9,5 @@ fi
 
 export OUTPUT_DIR
 source ~/anaconda3/etc/profile.d/conda.sh
-# conda activate fittering-measurements-cpu
-conda activate test4-env
+conda activate human-size-env
 bentoml serve serving.bentoml.service_human_size:svc --development

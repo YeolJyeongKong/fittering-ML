@@ -1,0 +1,204 @@
+---
+openapi: 3.0.0
+info:
+  title: ML-API
+  description: ml-api
+  version: 1.0.0
+servers:
+- url: https://virtserver.swaggerhub.com/SINJY1203_1/ML-API/1.0.0
+  description: SwaggerHub API Auto Mocking
+- url: http://ml-alb-1929884962.ap-northeast-2.elb.amazonaws.com/
+  description: SwaggerHub API Auto Mocking
+paths:
+  /masking_user:
+    post:
+      tags:
+      - predict human silhouette
+      operationId: masking_user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageS3Path'
+      responses:
+        "200":
+          description: successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaskedImageS3Path'
+  /human_size:
+    post:
+      tags:
+      - predict human size
+      operationId: human_size
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+      responses:
+        "200":
+          description: successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserMeasurementInfo'
+  /product_encode:
+    post:
+      tags:
+      - product image encoding to vectorDB
+      operationId: product_encode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoneJson'
+      responses:
+        "200":
+          description: successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusJson'
+  /fashion_cbf:
+    post:
+      tags:
+      - recommendation product using cbf
+      operationId: fashion_cbf
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecentProducts'
+      responses:
+        "200":
+          description: successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendProducts'
+components:
+  schemas:
+    ImageS3Path:
+      type: object
+      properties:
+        front:
+          type: string
+          format: path
+          example: 0/front.jpg
+        side:
+          type: string
+          format: path
+          example: 0/side.jpg
+    MaskedImageS3Path:
+      type: object
+      properties:
+        front:
+          type: string
+          format: path
+          example: 0/front_masked.jpg
+        side:
+          type: string
+          format: path
+          example: 0/side_masked.jpg
+    UserProfile:
+      type: object
+      properties:
+        front:
+          type: string
+          format: path
+          example: 0/front_masked.jpg
+        side:
+          type: string
+          format: path
+          example: 0/side_masked.jpg
+        height:
+          type: number
+          format: measurement
+          example: 177
+        weight:
+          type: number
+          format: measurement
+          example: 65
+        sex:
+          type: string
+          format: sex
+          example: M
+    UserMeasurementInfo:
+      type: object
+      properties:
+        height:
+          type: number
+          format: measurement
+          example: 177
+        chest_circumference:
+          type: number
+          format: measurement
+          example: 84.48
+        waist_circumference:
+          type: number
+          format: measurement
+          example: 71.17
+        hip_circumference:
+          type: number
+          format: measurement
+          example: 90.2
+        thigh_left_circumference:
+          type: number
+          format: measurement
+          example: 59.11
+        arm_left_length:
+          type: number
+          format: measurement
+          example: 56.23
+        inside_leg_height:
+          type: number
+          format: measurement
+          example: 87.64
+        shoulder_breadth:
+          type: number
+          format: measurement
+          example: 39.35
+    NoneJson:
+      type: object
+    StatusJson:
+      type: object
+      properties:
+        status:
+          type: number
+          format: status
+          example: 200
+    RecentProducts:
+      type: object
+      properties:
+        product_ids:
+          type: array
+          format: product id
+          example:
+          - 1
+          - 2
+          - 3
+          items:
+            type: integer
+            format: int64
+        gender:
+          type: string
+          format: gender
+          example: M
+    RecommendProducts:
+      type: object
+      properties:
+        product_ids:
+          type: array
+          format: product id
+          example:
+          - 100
+          - 32
+          - 423
+          - 231
+          - 345
+          - 12
+          items:
+            type: integer
+            format: int64

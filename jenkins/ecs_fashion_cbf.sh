@@ -10,7 +10,7 @@ fi
 
 export OUTPUT_DIR
 source ~/anaconda3/etc/profile.d/conda.sh
-conda activate fittering-measurements-cpu
+conda activate fashion-cbf-env
 bentoml build -f $OUTPUT_DIR/bentofile.yaml
 bentoml containerize product_recommendation:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/fashion-cbf:latest
 
