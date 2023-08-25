@@ -1,3 +1,6 @@
+# milvus db 
+/serving/milvus/
+
 # rds password
 rds_info.py
 
