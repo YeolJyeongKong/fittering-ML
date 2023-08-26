@@ -42,7 +42,7 @@ def product_recommendation_svc(root_dir):
     # del sys.modules["prometheus_client"]
 
     svc = bentoml.Service(
-        "product_recommendation",
+        "fashion-cbf",
         runners=[product_encode_runner],
     )
     return (svc, product_encode_runner, product_encode_preprocess)

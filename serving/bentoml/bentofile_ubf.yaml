@@ -5,7 +5,7 @@ labels:
 include:
 - extras/
 - configs/
-- serving/
+- serving/bentoml/
 - src/
 - .project-root
 python:
