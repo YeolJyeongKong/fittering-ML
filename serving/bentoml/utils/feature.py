@@ -33,3 +33,7 @@ class Product_Input(BaseModel):
 
 class Product_Output(BaseModel):
     product_ids: List[int]
+
+
+class UserId(BaseModel):
+    user_id: int

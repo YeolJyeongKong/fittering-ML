@@ -21,7 +21,7 @@ import hydra
 from pydantic import BaseModel
 import pyrootutils
 
-from serving.bentoml.utils import feature, load
+from serving.bentoml.utils import feature, rds, s3, bento_svc
 
 root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
@@ -38,8 +38,9 @@ from serving.bentoml import rds_info
     regression_runner,
     segment_preprocess,
     autoencoder_preprocess,
-) = load.human_size_svc(root_dir)
-s3 = load.s3(paths.S3_ACCESS_KEY_PATH)
+) = bento_svc.human_size_svc(root_dir)
+
+s3_obj = s3.connect(paths.S3_ACCESS_KEY_PATH)
 
 
 @svc.api(
@@ -54,11 +55,11 @@ def masking_user(input: feature.ImageS3Path) -> feature.ImageS3Path:
     front_masked_path = str(Path(front_path).parent / "front_masked.jpg")
     side_masked_path = str(Path(side_path).parent / "side_masked.jpg")
     front = Image.open(
-        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=front_path)["Body"]
+        s3_obj.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=front_path)["Body"]
     )
     front_size = front.size
     side = Image.open(
-        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=side_path)["Body"]
+        s3_obj.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=side_path)["Body"]
     )
     side_size = side.size
 
@@ -70,13 +71,13 @@ def masking_user(input: feature.ImageS3Path) -> feature.ImageS3Path:
 
     side_str = preprocess.to_bytearray(masked[1], side_size)
 
-    s3.put_object(
+    s3_obj.put_object(
         Bucket=constant.BUCKET_NAME_HUMAN,
         Key=front_masked_path,
         Body=front_str,
         ContentType="image/jpg",
     )
-    s3.put_object(
+    s3_obj.put_object(
         Bucket=constant.BUCKET_NAME_HUMAN,
         Key=side_masked_path,
         Body=side_str,

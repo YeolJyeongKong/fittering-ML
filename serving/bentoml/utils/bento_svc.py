@@ -3,9 +3,6 @@ import sys
 import pandas as pd
 import bentoml
 import hydra
-import boto3
-import aiobotocore
-import pymysql
 from omegaconf import OmegaConf
 
 
@@ -49,44 +46,3 @@ def product_recommendation_svc(root_dir):
         runners=[product_encode_runner],
     )
     return (svc, product_encode_runner, product_encode_preprocess)
-
-
-def s3(s3_access_key_path):
-    try:
-        s3_access_key = pd.read_csv(s3_access_key_path)
-        s3 = boto3.client(
-            "s3",
-            aws_access_key_id=s3_access_key["Access key ID"].values[0],
-            aws_secret_access_key=s3_access_key["Secret access key"].values[0],
-            region_name="ap-northeast-2",
-        )
-    except:
-        s3 = boto3.client("s3")
-
-    return s3
-
-
-def aios3(s3_access_key_path):
-    s3_access_key = pd.read_csv(s3_access_key_path)
-    session = aiobotocore.get_session()
-    s3 = session.create_client(
-        "s3",
-        aws_access_key_id=s3_access_key["Access key ID"].values[0],
-        aws_secret_access_key=s3_access_key["Secret access key"].values[0],
-        region_name="ap-northeast-2",
-    )
-    return s3
-
-
-def rds(host, user, password, db, port):
-    rds = pymysql.connect(
-        host=host,
-        user=user,
-        password=password,
-        db=db,
-        charset="utf8",
-        port=port,
-        autocommit=True,
-        cursorclass=pymysql.cursors.DictCursor,
-    )
-    return rds

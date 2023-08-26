@@ -1,38 +1,22 @@
-import os
-import json
-import sys
 from typing import Dict, Any
-from PIL import Image
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from pathlib import Path
-import base64
-from io import BytesIO
-
-import torch
 import torchvision.transforms.functional as F
-import bentoml
 from bentoml.io import JSON
 import asyncio
-import pymysql
-from omegaconf import OmegaConf
-import hydra
-from pydantic import BaseModel
 import pyrootutils
 
-from serving.bentoml.utils import feature, load, s3_image, vector_db
+from serving.bentoml.utils import feature, s3, rds, vector_db, bento_svc
 
 root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
 from serving.bentoml import rds_info
 
 
-svc, product_encode_runner, product_encode_preprocess = load.product_recommendation_svc(
+svc, product_encode_runner, product_encode_preprocess = bento_svc.product_recommendation_svc(
     root_dir
 )
 
-rds_conn = load.rds(
+rds_conn = rds.connect(
     host=rds_info.host,
     user=rds_info.user,
     password=rds_info.password,
@@ -44,18 +28,10 @@ rds_conn = load.rds(
 @svc.api(input=JSON(), output=JSON())
 def product_encode(input: Dict[str, Any]) -> Dict[str, Any]:
     cursor = rds_conn.cursor()
-    query = f"""
-        SELECT P.PRODUCT_ID AS PRODUCT_ID, I.URL AS URL, P.GENDER AS GENDER
-        FROM PRODUCT P
-        INNER JOIN (SELECT URL, PRODUCT_ID FROM IMAGEPATH WHERE THUMBNAIL = 1) I
-        ON P.PRODUCT_ID = I.PRODUCT_ID;
-    """
-    cursor.execute(query)
-    products = cursor.fetchall()
-    products_df = pd.DataFrame(products)
+    products_df = rds.load_ProductImageGender(cursor)
 
     imgs_tensor = asyncio.run(
-        s3_image.load_img(products_df["URL"].to_list(), product_encode_preprocess)
+        s3.load_img(products_df["URL"].to_list(), product_encode_preprocess)
     )
     imgs_encoded = product_encode_runner.run(imgs_tensor)
     vector_db.save_vector(
@@ -86,12 +62,7 @@ def fashion_cbf(input: feature.Product_Input) -> feature.Product_Output:
 
     else:
         cursor = rds_conn.cursor()
-        query = f"""
-            SELECT * FROM product
-        """
-        cursor.execute(query)
-        products = cursor.fetchall()
-        products_df = pd.DataFrame(products)
+        products_df = rds.load_Product(cursor)
 
         product_top_view = products_df[
             (products_df["gender"] == "A") | (products_df["gender"] == product_gender)
@@ -101,4 +72,4 @@ def fashion_cbf(input: feature.Product_Input) -> feature.Product_Output:
             product_top_view[:top_k]["product_id"].sample(n=recommendation_n).to_list()
         )
 
-    return {"product_id": recommendation_products}
+    return {"product_ids": recommendation_products}
