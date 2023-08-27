@@ -1,14 +1,11 @@
 pipeline {
     agent any
 
-    environment {
-    }
-
     stages {
         stage('Bentoml to docker image'){
             steps {
-                source /home/shin/anaconda3/bin/activate /home/shin/anaconda3/envs/fashion-ubf-env
-                bentoml serve serving.bentoml.service_fashion_ubf:svc --development --reload
+                sh 'source /home/shin/anaconda3/bin/activate /home/shin/anaconda3/envs/fashion-ubf-env'
+                sh 'bentoml serve serving.bentoml.service_fashion_ubf:svc --development --reload'
             }
         }
     }  
