@@ -9,6 +9,7 @@ pipeline {
             steps {
                 source /home/shin/anaconda3/bin/activate /home/shin/anaconda3/envs/fashion-ubf-env
                 bentoml serve serving.bentoml.service_fashion_ubf:svc --development --reload
+            }
         }
-    }
+    }  
 }
