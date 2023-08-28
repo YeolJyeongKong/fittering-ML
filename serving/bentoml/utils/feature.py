@@ -36,4 +36,4 @@ class Product_Output(BaseModel):
 
 
 class UserId(BaseModel):
-    user_id: int
+    user_id: int = 1
