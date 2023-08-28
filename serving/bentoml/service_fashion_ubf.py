@@ -39,7 +39,7 @@ def fashion_ubf(input: feature.UserId) -> feature.Product_Output:
     ]
 
     recommendation_products = sklearn_model.knn_predict(
-        user_info, other_users, n_neighbors=10, n_recommendations=4
+        user_info, other_users, n_neighbors=10, n_recommendations=5
     )
 
     return {"product_ids": recommendation_products}

@@ -4,20 +4,11 @@ pipeline {
     stages {
         stage('Bentoml to docker image'){
             steps {
-                // echo WORKSPACE
-                // sh '''#!/usr/bin/env bash
-                // source ~/anaconda3/etc/profile.d/conda.sh
-                // conda activate fittering-measurements-cpufittering-measurements-cpu
-                // '''
-                sh "./jenkins/bentoml_build.sh"
-                // sh "source ~/anaconda3/etc/profile.d/conda.sh"
-                // sh "conda activate fittering-measurements-cpu"
-                // sh "bentoml build -f /home/shin/VScodeProjects/fittering-ML/outputs/2023-08-02/00-17-34/bentofile.yaml"
-                // sh "bentoml containerize human_size_predict:latest"
-                // sh '''#!/bin/bash
-                //     . /home/shin/anaconda3/bin/activate fittering-measurements-cpu
-                // '''
+                sh 'cd /home/shin/anaconda3/envs'
+                sh 'ls -al'
+                sh 'source /home/shin/anaconda3/bin/activate /home/shin/anaconda3/envs/fashion-ubf-env'
+                sh 'bentoml serve serving.bentoml.service_fashion_ubf:svc --development --reload'
             }
         }
-    }
+    }  
 }
