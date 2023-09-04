@@ -9,12 +9,37 @@ from pymilvus import (
 )
 
 
-def save_vector(embedded, product_id, gender):
-    connections.connect("default", host="13.125.214.45", port="19530")
-    # connections.connect("default", host="localhost", port="19530")
-    if utility.has_collection("image_vector_db"):
-        utility.drop_collection("image_vector_db")
+def connect(host, port):
+    connections.connect("default", host=host, port=port)
 
+
+def disconnect():
+    connections.disconnect("default")
+
+
+def exist_collection(collection_name):
+    return utility.has_collection(collection_name)
+
+
+def delete_collection(collection_name):
+    if exist_collection(collection_name):
+        utility.drop_collection(collection_name)
+
+
+def add_vector(collection_name, embedded, product_id, gender):
+    image_embedding_collection = Collection("image_embedding_collection")
+    image_embedding_collection.load()
+
+    entities = [
+        product_id,
+        gender,
+        embedded,
+    ]
+    image_embedding_collection.insert(entities)
+    image_embedding_collection.flush()
+
+
+def save_collection(collection_name, embedded, product_id, gender):
     fields = [
         FieldSchema(
             name="product_id",
@@ -27,16 +52,18 @@ def save_vector(embedded, product_id, gender):
     ]
     schema = CollectionSchema(fields, "product_image_vector")
 
-    image_vector_db = Collection("image_vector_db", schema, consistency_level="Strong")
+    image_embedding_collection = Collection(
+        collection_name, schema, consistency_level="Strong"
+    )
 
     entities = [
         product_id,
         gender,
         embedded,
     ]
-    insert_result = image_vector_db.insert(entities)
+    image_embedding_collection.insert(entities)
 
-    image_vector_db.flush()
+    image_embedding_collection.flush()
 
     index = {
         "index_type": "IVF_FLAT",
@@ -44,17 +71,14 @@ def save_vector(embedded, product_id, gender):
         "params": {"nlist": 128},
     }
 
-    image_vector_db.create_index("embeddings", index)
-    connections.disconnect("default")
+    image_embedding_collection.create_index("embeddings", index)
 
 
-def search_vector(product_ids, gender, top_k, recommendation_n):
-    connections.connect("default", host="13.125.214.45", port="19530")
-    # connections.connect("default", host="localhost", port="19530")
-    image_vector_db = Collection("image_vector_db")
-    image_vector_db.load()
+def search_vector(collection_name, product_ids, gender, top_k, recommendation_n):
+    image_embedding_collection = Collection(collection_name)
+    image_embedding_collection.load()
 
-    res = image_vector_db.query(
+    res = image_embedding_collection.query(
         expr=f"product_id in {product_ids}",
         output_fields=["product_id", "gender", "embeddings"],
     )
@@ -65,7 +89,7 @@ def search_vector(product_ids, gender, top_k, recommendation_n):
         "params": {"nprobe": 10},
     }
 
-    result = image_vector_db.search(
+    result = image_embedding_collection.search(
         search_embeddings,
         "embeddings",
         search_params,
@@ -80,5 +104,4 @@ def search_vector(product_ids, gender, top_k, recommendation_n):
             search_result += [hit.entity.get("product_id")]
     random.shuffle(search_result)
 
-    connections.disconnect("default")
     return search_result[:recommendation_n]

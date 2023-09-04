@@ -16,13 +16,23 @@ def connect(host, user, password, db, port):
     return rds
 
 
-def load_ProductImageGender(cursor):
-    query = f"""
-        SELECT P.PRODUCT_ID AS PRODUCT_ID, I.URL AS URL, P.GENDER AS GENDER
-        FROM PRODUCT P
-        INNER JOIN (SELECT URL, PRODUCT_ID FROM IMAGEPATH WHERE THUMBNAIL = 1) I
-        ON P.PRODUCT_ID = I.PRODUCT_ID;
-    """
+def load_ProductImageGender(cursor, product_ids):
+    if product_ids == []:
+        query = f"""
+            SELECT P.PRODUCT_ID AS PRODUCT_ID, I.URL AS URL, P.GENDER AS GENDER
+            FROM PRODUCT P
+            INNER JOIN (SELECT URL, PRODUCT_ID FROM IMAGEPATH WHERE THUMBNAIL = 1) I
+            ON P.PRODUCT_ID = I.PRODUCT_ID;
+        """
+    else:
+        product_ids = str(tuple(product_ids)).replace(",)", ")")
+        query = f"""
+            SELECT P.PRODUCT_ID AS PRODUCT_ID, I.URL AS URL, P.GENDER AS GENDER
+            FROM PRODUCT P
+            INNER JOIN (SELECT URL, PRODUCT_ID FROM IMAGEPATH WHERE THUMBNAIL = 1) I
+            ON P.PRODUCT_ID = I.PRODUCT_ID
+            WHERE P.PRODUCT_ID IN {tuple(product_ids)};
+        """
     cursor.execute(query)
     products = cursor.fetchall()
     products_df = pd.DataFrame(products)
