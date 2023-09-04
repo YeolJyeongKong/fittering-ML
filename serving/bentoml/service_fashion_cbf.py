@@ -12,9 +12,11 @@ root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpat
 from serving.bentoml import rds_info
 
 
-svc, product_encode_runner, product_encode_preprocess = bento_svc.product_recommendation_svc(
-    root_dir
-)
+(
+    svc,
+    product_encode_runner,
+    product_encode_preprocess,
+) = bento_svc.product_recommendation_svc(root_dir)
 
 rds_conn = rds.connect(
     host=rds_info.host,
@@ -25,21 +27,37 @@ rds_conn = rds.connect(
 )
 
 
-@svc.api(input=JSON(), output=JSON())
-def product_encode(input: Dict[str, Any]) -> Dict[str, Any]:
+@svc.api(input=JSON(pydantic_model=feature.NewProductId), output=JSON())
+def product_encode(input: feature.NewProductId) -> Dict[str, Any]:
+    # vector_db.connect(host="13.125.214.45", port="19530")
+    vector_db.connect(host="172.31.3.122", port="19530")
+
+    input = input.dict()
+    product_ids = input["product_ids"]
+
     cursor = rds_conn.cursor()
-    products_df = rds.load_ProductImageGender(cursor)
+    products_df = rds.load_ProductImageGender(cursor, product_ids)
 
     imgs_tensor = asyncio.run(
         s3.load_img(products_df["URL"].to_list(), product_encode_preprocess)
     )
     imgs_encoded = product_encode_runner.run(imgs_tensor)
-    vector_db.save_vector(
-        embedded=imgs_encoded.numpy(),
-        product_id=products_df["PRODUCT_ID"].to_list(),
-        gender=products_df["GENDER"].to_list(),
-    )
 
+    if vector_db.exist_collection("image_embedding_collection"):
+        vector_db.add_vector(
+            collection_name="image_embedding_collection",
+            embedded=imgs_encoded.numpy(),
+            product_id=products_df["PRODUCT_ID"].to_list(),
+            gender=products_df["GENDER"].to_list(),
+        )
+    else:
+        vector_db.save_collection(
+            collection_name="image_embedding_collection",
+            embedded=imgs_encoded.numpy(),
+            product_id=products_df["PRODUCT_ID"].to_list(),
+            gender=products_df["GENDER"].to_list(),
+        )
+    vector_db.disconnect()
     return {"status": 200}
 
 
@@ -54,6 +72,8 @@ def fashion_cbf(input: feature.Product_Input) -> feature.Product_Output:
     product_dict = input.dict()
     product_ids = product_dict["product_ids"]
     product_gender = product_dict["gender"]
+
+    vector_db.connect(host="13.125.214.45", port="19530")
 
     if product_ids:
         recommendation_products = vector_db.search_vector(
@@ -71,5 +91,5 @@ def fashion_cbf(input: feature.Product_Input) -> feature.Product_Output:
         recommendation_products = (
             product_top_view[:top_k]["product_id"].sample(n=recommendation_n).to_list()
         )
-
+    vector_db.disconnect()
     return {"product_ids": recommendation_products}

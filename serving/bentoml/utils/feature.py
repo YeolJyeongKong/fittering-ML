@@ -37,3 +37,7 @@ class Product_Output(BaseModel):
 
 class UserId(BaseModel):
     user_id: int = 1
+
+
+class NewProductId(BaseModel):
+    product_ids: List[int] = [1, 2, 3]
