@@ -32,7 +32,6 @@ async def load_img_(url, client, preprocess):
     try:
         return preprocess(Image.open(BytesIO(obj)))
     except:
-        print(obj)
         raise Exception("Image open error")
 
 
