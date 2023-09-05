@@ -32,7 +32,7 @@ class Product_Input(BaseModel):
 
 
 class Product_Output(BaseModel):
-    product_ids: List[int]
+    product_ids: List[int] = [146, 200, 267, 6, 345]
 
 
 class UserId(BaseModel):
