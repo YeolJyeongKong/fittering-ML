@@ -97,10 +97,10 @@ def human_size(input: feature.User) -> feature.UserSize:
     side_path = input["side"]
 
     front = Image.open(
-        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=front_path)["Body"]
+        s3_obj.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=front_path)["Body"]
     ).convert("L")
     side = Image.open(
-        s3.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=side_path)["Body"]
+        s3_obj.get_object(Bucket=constant.BUCKET_NAME_HUMAN, Key=side_path)["Body"]
     ).convert("L")
 
     front = autoencoder_preprocess(front).unsqueeze(dim=0)

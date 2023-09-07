@@ -20,7 +20,7 @@ from src.models.models import (
     CombAutoEncoder,
     ProductClassifyBox,
 )
-from src.utils.metrics import AccuracyBinaryImage, MeasureMAE
+from src.utils.metrics import AccuracyBinaryImage
 
 
 class CNNForwardModule(pl.LightningModule):
