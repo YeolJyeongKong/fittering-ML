@@ -2,10 +2,14 @@ human_size:
   _target_: pytorch_lightning.loggers.WandbLogger
   project: human_size_predict
   save_dir: "${paths.output_dir}"
+  name: "${paths.output_dir}"
+  entity: sinjy1203
   offline: False
 
 product_encode:
   _target_: pytorch_lightning.loggers.WandbLogger
   project: item_based_recommendation
   save_dir: "${paths.output_dir}"
+  name: "${paths.output_dir}"
+  entity: sinjy1203
   offline: False

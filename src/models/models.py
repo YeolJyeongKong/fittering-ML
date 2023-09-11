@@ -118,7 +118,7 @@ class EfficientNet(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, filters=32, nblocks=5) -> None:
+    def __init__(self, input_shape, nblocks, filters, latent_dim) -> None:
         super(Encoder, self).__init__()
 
         def CBAP(in_ch, out_ch):
@@ -144,17 +144,21 @@ class Encoder(nn.Module):
         blocks += [CBAP(filters, filters) for _ in range(nblocks - 1)]
 
         self.blocks = nn.Sequential(*blocks)
-        self.fc = nn.Linear(in_features=8192, out_features=256)
+        self.conv_output_shape = input_shape[0] // (2**nblocks)
+        self.conv_output_flatten_dim = (self.conv_output_shape) ** 2 * filters
+        self.fc = nn.Linear(
+            in_features=self.conv_output_flatten_dim, out_features=latent_dim
+        )
 
     def forward(self, x):
         x = self.blocks(x)
-        x = x.view(-1, 8192)
+        x = x.view(-1, self.conv_output_flatten_dim)
         x = self.fc(x)
         return x  # torch.Size([-1, 256])
 
 
 class Decoder(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self, input_shape, nblocks, filters, latent_dim) -> None:
         super(Decoder, self).__init__()
 
         def UCBA(in_ch, out_ch):
@@ -168,15 +172,19 @@ class Decoder(nn.Module):
 
             return nn.Sequential(*layers)
 
-        self.fc = nn.Linear(256, 8192)
+        self.filters = filters
+        self.conv_output_shape = input_shape[0] // (2**nblocks)
+        self.conv_output_flatten_dim = (self.conv_output_shape) ** 2 * filters
+
+        self.fc = nn.Linear(latent_dim, self.conv_output_flatten_dim)
 
         blocks = []
-        blocks += [UCBA(32, 32) for _ in range(5)]
+        blocks += [UCBA(filters, filters) for _ in range(nblocks)]
 
         self.blocks = nn.Sequential(*blocks)
 
         self.conv2d = nn.Conv2d(
-            in_channels=32,
+            in_channels=filters,
             out_channels=1,
             kernel_size=1,
             stride=1,
@@ -187,30 +195,20 @@ class Decoder(nn.Module):
     def forward(self, x):
         x = self.fc(x)
         x = F.relu(x)
-        x = x.view(-1, 32, 16, 16)
+        x = x.view(-1, self.filters, self.conv_output_shape, self.conv_output_shape)
         x = self.blocks(x)
         x = F.sigmoid(self.conv2d(x))
         return x  # torch.size([-1, 2, 512, 512])
 
 
 class AutoEncoder(nn.Module):
-    def __init__(self):
+    def __init__(self, input_shape, nblocks, filters, latent_dim):
         super().__init__()
-        self.encoder = Encoder()
-        self.decoder = Decoder()
+        self.encoder = Encoder(input_shape, nblocks, filters, latent_dim)
+        self.decoder = Decoder(input_shape, nblocks, filters, latent_dim)
 
     def forward(self, x):
         return self.decoder(self.encoder(x))
-
-
-class CombAutoEncoder(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.frontae = AutoEncoder()
-        self.sideae = AutoEncoder()
-
-    def forward(self, front, side):
-        return self.frontae(front), self.sideae(side)
 
 
 class ProductImageEncode(nn.Module):
@@ -239,3 +237,10 @@ class ProductClassifyBox(nn.Module):
     def forward(self, x):
         x = self.encoder(x)
         return self.fc_classify(x), self.fc_box(x)
+
+
+if __name__ == "__main__":
+    from torchinfo import summary
+
+    model = AutoEncoder(input_shape=[512, 512], nblocks=5, filters=32, latent_dim=256)
+    summary(model, (16, 1, 512, 512))

@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import Callback, EarlyStopping, ModelCheckpoint
@@ -17,14 +18,13 @@ from src.inference import encoder_inference
 from src import utils
 
 
-def train_ProductModule(cfg: DictConfig):
+def train_ProductModule(cfg: DictConfig, wandb_logger):
     dm = hydra.utils.instantiate(cfg.data.product_encode)
     dm.prepare_data()
     dm.setup()
 
     module = hydra.utils.instantiate(cfg.model.product_encode)
 
-    wandb_logger = hydra.utils.instantiate(cfg.logger.product_encode)
     utils.print_wandb_run(cfg)
 
     val_samples = next(iter(dm.callback_dataloader()))
@@ -35,7 +35,7 @@ def train_ProductModule(cfg: DictConfig):
         callbacks=[
             EarlyStopping(monitor="val_loss"),
             ModelCheckpoint(
-                dirpath=cfg.paths.model_save_dir, filename="product_encode"
+                dirpath="./model_weights/product_encode.ckpt", monitor="val_loss"
             ),
             utils.ProductLogger(val_samples=val_samples, idx2category=dm.idx2category),
         ],
