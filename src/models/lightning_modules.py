@@ -1,26 +1,18 @@
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import Callback, EarlyStopping, ModelCheckpoint
-from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.types import EPOCH_OUTPUT
 import torchmetrics
 from torchmetrics import MeanAbsoluteError, Accuracy
-from torchmetrics.classification import MulticlassAccuracy
 
-import wandb
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from src.models.models import (
-    EfficientNet,
     AutoEncoder,
     EfficientNetv2,
-    SimpleNet,
-    CombAutoEncoder,
     ProductClassifyBox,
 )
-from src.utils.metrics import AccuracyBinaryImage, MeasureMAE
 
 
 class CNNForwardModule(pl.LightningModule):
@@ -94,14 +86,21 @@ class CNNForwardModule(pl.LightningModule):
 
 
 class CombAutoEncoderModule(pl.LightningModule):
-    def __init__(self, learning_rate=1e-4):
+    def __init__(
+        self,
+        learning_rate=1e-4,
+        input_shape=[512, 512],
+        nblocks=5,
+        filters=32,
+        latent_dim=256,
+    ):
         super().__init__()
         self.learning_rate = learning_rate
 
         self.save_hyperparameters()
 
-        self.front_autoencoder = AutoEncoder()
-        self.side_autoencoder = AutoEncoder()
+        self.front_autoencoder = AutoEncoder(input_shape, nblocks, filters, latent_dim)
+        self.side_autoencoder = AutoEncoder(input_shape, nblocks, filters, latent_dim)
 
         self.acc = Accuracy(task="binary")
 

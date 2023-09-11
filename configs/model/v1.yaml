@@ -6,6 +6,10 @@ segment:
 autoencoder:
   _target_: src.models.lightning_modules.CombAutoEncoderModule
   learning_rate: 1e-4
+  input_shape: ${preprocess.autoencoder.transforms.2.size}
+  nblocks: 5
+  filters: 32
+  latent_dim: 256
 
 regression:
   _target_: sklearn.kernel_ridge.KernelRidge

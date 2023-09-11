@@ -1,0 +1,10 @@
+product_encode:
+  method: bayes
+  name: sweep
+  metric:
+    goal: minimize
+    name: test_loss
+  parameters:
+    model.product_encode.learning_rate:
+      max: 1e-3
+      min: 1e-5

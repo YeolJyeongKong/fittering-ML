@@ -52,6 +52,7 @@ class DataModule(pl.LightningDataModule):
         self.shuffle = shuffle
 
         self.transform = transform
+        print()
 
     def prepare_data(self):
         pass
@@ -107,7 +108,7 @@ class FashionDataModule(pl.LightningDataModule):
         data_dir=paths.FASHION_DATA_DIR,
         batch_size=8,
         callback_batch_size=64,
-        num_workers=0,
+        num_workers=8,
         pin_memory=False,
     ):
         super().__init__()

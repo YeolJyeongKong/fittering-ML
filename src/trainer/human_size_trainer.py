@@ -1,27 +1,17 @@
-import os
-import pickle
 import numpy as np
 from sklearn.metrics import mean_absolute_error
-from sklearn.kernel_ridge import KernelRidge
 
 import torch
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks import Callback, EarlyStopping, ModelCheckpoint
-from pytorch_lightning.loggers import WandbLogger
-import torchmetrics
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
 import bentoml
 import wandb
 import hydra
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 import pyrootutils
 
 pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
-from src.models.lightning_modules import CNNForwardModule, AutoEncoderModule
-from src.data.datamodule import DataModule
-from src.inference import encoder_inference
 from src import utils
-
 from extras import paths
 
 
@@ -37,14 +27,13 @@ def save_segment(cfg: DictConfig, saved=True):
     return str(bentoml_segment.tag)
 
 
-def train_AutoEncoderModule(cfg: DictConfig):
+def train_AutoEncoderModule(cfg: DictConfig, wandb_logger):
     dm = hydra.utils.instantiate(cfg.data.autoencoder)
     dm.prepare_data()
     dm.setup()
 
     module = hydra.utils.instantiate(cfg.model.autoencoder)
 
-    wandb_logger = hydra.utils.instantiate(cfg.logger.human_size)
     utils.print_wandb_run(cfg)
 
     val_samples = next(iter(dm.val_dataloader()))
@@ -54,7 +43,9 @@ def train_AutoEncoderModule(cfg: DictConfig):
         logger=wandb_logger,
         callbacks=[
             EarlyStopping(monitor="val_loss"),
-            ModelCheckpoint(dirpath=cfg.paths.model_save_dir, filename="autoencoder"),
+            ModelCheckpoint(
+                dirpath="./model_weights/human_size.ckpt", monitor="val_loss"
+            ),
             utils.ImagePredictionLogger(val_samples=val_samples),
         ],
     )
@@ -85,13 +76,8 @@ def train_Regression(train, test, cfg: DictConfig):
     train_mae = mean_absolute_error(train_y, reg.predict(train_x))
     test_mae = mean_absolute_error(test_y, reg.predict(test_x))
 
-    pickle.dump(
-        reg, open(os.path.join(cfg.paths.model_save_dir, "regression.pickle"), "wb")
-    )
-
     wandb.log({"regression_train_mae": train_mae, "regression_test_mae": test_mae})
 
-    wandb.finish()
     bentoml_regression = bentoml.sklearn.save_model("regression", reg)
 
     return str(bentoml_regression.tag)

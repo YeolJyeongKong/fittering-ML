@@ -30,8 +30,8 @@ class InferenceEncoder:
         return torch.cat([front_z, side_z], dim=1)
 
 
-def encode_(module, dataloader, dataset_len, batch_size, device):
-    x = np.empty((dataset_len, 515))
+def encode_(module, dataloader, dataset_len, batch_size, device, input_dim):
+    x = np.empty((dataset_len, input_dim))
     y = np.empty((dataset_len, 8))
 
     for idx, batch in tqdm(
@@ -63,7 +63,7 @@ def encode_(module, dataloader, dataset_len, batch_size, device):
     return x, y
 
 
-def encode(module, dm, device):
+def encode(module, dm, device, input_dim):
     module.eval()
     module = module.to(device)
 
@@ -72,10 +72,20 @@ def encode(module, dm, device):
     dm.batch_size = 32
 
     train_x, train_y = encode_(
-        module, dm.train_dataloader(), len(dm.train_dataset), dm.batch_size, device
+        module,
+        dm.train_dataloader(),
+        len(dm.train_dataset),
+        dm.batch_size,
+        device,
+        input_dim,
     )
     test_x, test_y = encode_(
-        module, dm.test_dataloader(), len(dm.test_dataset), dm.batch_size, device
+        module,
+        dm.test_dataloader(),
+        len(dm.test_dataset),
+        dm.batch_size,
+        device,
+        input_dim,
     )
 
     return (train_x, train_y), (test_x, test_y)

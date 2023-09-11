@@ -1,7 +1,7 @@
 autoencoder:
   _target_: pytorch_lightning.Trainer
   min_epochs: 1
-  max_epochs: 15
+  max_epochs: 10
   accelerator: gpu
   devices: 1
 
