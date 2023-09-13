@@ -1,10 +1,33 @@
-product_encode:
-  method: bayes
-  name: sweep
-  metric:
-    goal: minimize
-    name: test_loss
-  parameters:
-    model.product_encode.learning_rate:
-      max: 1e-3
-      min: 1e-5
+program: src/train.py
+entity: "sinjy1203"
+project: "product_encode_sweep"
+method: bayes
+run_cap: 20
+metric:
+  goal: minimize
+  name: val_loss
+early_terminate:
+  type: hyperband
+  min_iter: 3
+parameters:
+  train:
+    value: "product_encode"
+  trainer.product_encode.max_epochs:
+    value: 5
+  model.product_encode.learning_rate:
+    max: 0.001
+    min: 0.00001
+  model.product_encode.bbox_loss_weight:
+    min: 0.1
+    max: 0.9
+  model.product_encode.embedding_dim:
+    values: [32, 64, 128, 256, 512]
+  preprocess.product_encode.transforms.1.size:
+    values: [[64, 64], [128, 128], [256, 256], [512, 512]]
+    
+command:
+- ${env}
+- ${interpreter}
+- ${program}
+- ${args_no_hyphens}
+    
