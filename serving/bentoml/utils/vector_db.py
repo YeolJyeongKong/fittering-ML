@@ -28,7 +28,7 @@ def delete_collection(collection_name):
 
 
 def add_vector(collection_name, embedded, product_id, gender):
-    image_embedding_collection = Collection("image_embedding_collection")
+    image_embedding_collection = Collection(collection_name)
     image_embedding_collection.load()
 
     entities = [

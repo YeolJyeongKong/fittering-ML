@@ -55,3 +55,11 @@ BUCKET_NAME_HUMAN = "fittering-measurements-images"
 S3_URL_HUMAN = "https://fittering-measurements-images.s3.ap-northeast-2.amazonaws.com"
 
 BUCKET_NAME_PRODUCT = "fittering-crawling-image"
+
+
+# ------------------------ milvus ------------------------
+# MILVUS_COLLECTION_NAME = "image_embedding_collection"
+MILVUS_COLLECTION_NAME = "image_embedding_collection_test"
+MILVUS_PRIVATE_HOST = "172.31.3.122"
+MILVUS_PUBLIC_HOST = "13.125.214.45"
+MILVUS_PORT = "19530"

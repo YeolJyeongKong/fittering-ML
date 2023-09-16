@@ -1,5 +1,6 @@
 from io import BytesIO
 import pandas as pd
+import PIL
 from PIL import Image
 import asyncio
 import boto3
@@ -30,7 +31,15 @@ async def load_img_(url, client, preprocess):
     response = await client.get_object(Bucket=constant.BUCKET_NAME_PRODUCT, Key=url)
     obj = await response["Body"].read()
     try:
-        return preprocess(Image.open(BytesIO(obj)))
+        image_obj = Image.open(BytesIO(obj))
+        if isinstance(image_obj, PIL.GifImagePlugin.GifImageFile):
+            imgs_lst = []
+            for i in range(image_obj.n_frames):
+                image_obj.seek(i)
+                imgs_lst.append(preprocess(image_obj.convert("RGB")))
+            return torch.stack(imgs_lst, dim=0), image_obj.n_frames
+
+        return preprocess(Image.open(BytesIO(obj))).unsqueeze(0), 1
     except:
         raise Exception("Image open error")
 
@@ -47,10 +56,18 @@ async def load_img(urls, preprocess):
             region_name="ap-northeast-2",
         ) as client:
             tasks = [load_img_(url, client, preprocess) for url in urls]
-            img_lst = await asyncio.gather(*tasks)
-            return torch.stack(img_lst, dim=0)
+            img_nframe_lst = await asyncio.gather(*tasks)
+            imgs, nframes = [], []
+            for img, nframe in img_nframe_lst:
+                imgs.append(img)
+                nframes.append(nframe)
+            return torch.cat(imgs, dim=0), nframes
     except:
         async with session.create_client("s3") as client:
             tasks = [load_img_(url, client, preprocess) for url in urls]
-            img_lst = await asyncio.gather(*tasks)
-            return torch.stack(img_lst, dim=0)
+            img_nframe_lst = await asyncio.gather(*tasks)
+            imgs, nframes = [], []
+            for img, nframe in img_nframe_lst:
+                imgs.append(img)
+                nframes.append(nframe)
+            return torch.cat(imgs, dim=0), nframes

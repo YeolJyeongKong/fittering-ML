@@ -1,5 +1,6 @@
 import requests
 import re
+import torch
 
 
 def local_check():
@@ -11,3 +12,15 @@ def local_check():
         return True
     else:
         return False
+
+
+def mean_nframe_encoded(imgs_encoded, nframes):
+    new_imgs_encoded = []
+    start_idx = 0
+    for nframe in nframes:
+        end_idx = start_idx + nframe
+        sub_tensor = imgs_encoded[start_idx:end_idx]
+        mean_tensor = torch.mean(sub_tensor, dim=0, keepdim=True)
+        new_imgs_encoded.append(mean_tensor)
+        start_idx = end_idx
+    return torch.cat(new_imgs_encoded, dim=0)

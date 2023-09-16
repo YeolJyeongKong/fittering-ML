@@ -11,6 +11,7 @@ from serving.bentoml.utils import feature, s3, rds, vector_db, bento_svc, utils
 root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
 from serving.bentoml import rds_info
+from extras.constant import *
 
 
 (
@@ -30,9 +31,9 @@ def product_encode(input: feature.NewProductId) -> Dict[str, Any]:
         port=rds_info.port,
     )
     if utils.local_check():
-        vector_db.connect(host="13.125.214.45", port="19530")
+        vector_db.connect(host=MILVUS_PUBLIC_HOST, port=MILVUS_PORT)
     else:
-        vector_db.connect(host="172.31.3.122", port="19530")
+        vector_db.connect(host=MILVUS_PRIVATE_HOST, port=MILVUS_PORT)
 
     input = input.dict()
     product_ids = input["product_ids"]
@@ -40,21 +41,22 @@ def product_encode(input: feature.NewProductId) -> Dict[str, Any]:
     cursor = rds_conn.cursor()
     products_df = rds.load_ProductImageGender(cursor, product_ids)
 
-    imgs_tensor = asyncio.run(
+    imgs_tensor, nframes = asyncio.run(
         s3.load_img(products_df["URL"].to_list(), product_encode_preprocess)
     )
     imgs_encoded = product_encode_runner.run(imgs_tensor)
+    imgs_encoded = utils.mean_nframe_encoded(imgs_encoded, nframes)
 
-    if vector_db.exist_collection("image_embedding_collection"):
+    if vector_db.exist_collection(MILVUS_COLLECTION_NAME):
         vector_db.add_vector(
-            collection_name="image_embedding_collection",
+            collection_name=MILVUS_COLLECTION_NAME,
             embedded=imgs_encoded.numpy(),
             product_id=products_df["PRODUCT_ID"].to_list(),
             gender=products_df["GENDER"].to_list(),
         )
     else:
         vector_db.save_collection(
-            collection_name="image_embedding_collection",
+            collection_name=MILVUS_COLLECTION_NAME,
             embedded=imgs_encoded.numpy(),
             product_id=products_df["PRODUCT_ID"].to_list(),
             gender=products_df["GENDER"].to_list(),
@@ -85,13 +87,13 @@ def fashion_cbf(input: feature.Product_Input) -> feature.Product_Output:
         port=rds_info.port,
     )
     if utils.local_check():
-        vector_db.connect(host="13.125.214.45", port="19530")
+        vector_db.connect(host=MILVUS_PUBLIC_HOST, port=MILVUS_PORT)
     else:
-        vector_db.connect(host="172.31.3.122", port="19530")
+        vector_db.connect(host=MILVUS_PRIVATE_HOST, port=MILVUS_PORT)
 
     if product_ids:
         recommendation_products = vector_db.search_vector(
-            "image_embedding_collection",
+            MILVUS_COLLECTION_NAME,
             product_ids,
             product_gender,
             top_k,
