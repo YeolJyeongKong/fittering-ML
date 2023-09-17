@@ -28,7 +28,10 @@ def connect(s3_access_key_path):
 
 
 async def load_img_(url, client, preprocess):
-    response = await client.get_object(Bucket=constant.BUCKET_NAME_PRODUCT, Key=url)
+    response = await client.get_object(
+        Bucket=constant.S3_BUCKET_NAME_PRODUCT,
+        Key=constant.S3_BUCKET_PATH_PRODUCT + url,
+    )
     obj = await response["Body"].read()
     try:
         image_obj = Image.open(BytesIO(obj))

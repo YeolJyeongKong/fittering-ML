@@ -4,6 +4,7 @@ import pandas as pd
 import torchvision.transforms.functional as F
 from bentoml.io import JSON
 import asyncio
+import torch
 import pyrootutils
 
 from serving.bentoml.utils import feature, s3, rds, vector_db, bento_svc, utils
@@ -44,7 +45,13 @@ def product_encode(input: feature.NewProductId) -> Dict[str, Any]:
     imgs_tensor, nframes = asyncio.run(
         s3.load_img(products_df["URL"].to_list(), product_encode_preprocess)
     )
-    imgs_encoded = product_encode_runner.run(imgs_tensor)
+
+    imgs_encoded = []
+    for i in range(imgs_tensor.shape[0] // 16 + 1):
+        imgs_encoded.append(
+            product_encode_runner.run(imgs_tensor[i * 16 : (i + 1) * 16])
+        )
+    imgs_encoded = torch.cat(imgs_encoded, dim=0)
     imgs_encoded = utils.mean_nframe_encoded(imgs_encoded, nframes)
 
     if vector_db.exist_collection(MILVUS_COLLECTION_NAME):
@@ -72,8 +79,8 @@ def product_encode(input: feature.NewProductId) -> Dict[str, Any]:
     output=JSON(pydantic_model=feature.Product_Output),
 )
 def fashion_cbf(input: feature.Product_Input) -> feature.Product_Output:
-    top_k = 10
-    recommendation_n = 5
+    top_k = 12
+    recommendation_n = 12
 
     product_dict = input.dict()
     product_ids = product_dict["product_ids"]

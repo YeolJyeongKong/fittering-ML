@@ -36,9 +36,10 @@ def human_size_svc(root_dir):
 def product_recommendation_svc(root_dir):
     output_dir = os.environ["OUTPUT_DIR"]
     cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
+    bentofile_yml = OmegaConf.load(os.path.join(root_dir, output_dir, "bentofile.yaml"))
 
     product_encode_preprocess = hydra.utils.instantiate(cfg.preprocess.product_encode)
-    product_encode_runner = bentoml.pytorch.get("product_encode:latest").to_runner()
+    product_encode_runner = bentoml.pytorch.get(bentofile_yml.models[0]).to_runner()
     # del sys.modules["prometheus_client"]
 
     svc = bentoml.Service(

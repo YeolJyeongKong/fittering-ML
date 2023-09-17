@@ -4,8 +4,8 @@ project: "product_encode_sweep"
 method: bayes
 run_cap: 20
 metric:
-  goal: minimize
-  name: val_loss
+  goal: maxmize
+  name: val_acc
 early_terminate:
   type: hyperband
   min_iter: 3
