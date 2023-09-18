@@ -52,7 +52,6 @@ class DataModule(pl.LightningDataModule):
         self.shuffle = shuffle
 
         self.transform = transform
-        print()
 
     def prepare_data(self):
         pass

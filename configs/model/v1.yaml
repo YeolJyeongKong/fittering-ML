@@ -21,3 +21,4 @@ product_encode:
   _target_: src.models.lightning_modules.ProductModule
   learning_rate: 1e-4
   bbox_loss_weight: 1.0
+  embedding_dim: 64

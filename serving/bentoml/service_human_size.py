@@ -119,11 +119,11 @@ def human_size(input: feature.User) -> feature.UserSize:
 
     return {
         "height": pred[0][0],
-        "chest_circumference": pred[0][1],
-        "waist_circumference": pred[0][2],
-        "hip_circumference": pred[0][3],
-        "thigh_left_circumference": pred[0][4],
-        "arm_left_length": pred[0][5],
-        "inside_leg_height": pred[0][6],
-        "shoulder_breadth": pred[0][7],
+        "chest": pred[0][1],
+        "waist": pred[0][2],
+        "hip": pred[0][3],
+        "thigh": pred[0][4],
+        "arm": pred[0][5],
+        "leg": pred[0][6],
+        "shoulder": pred[0][7],
     }

@@ -6,5 +6,4 @@ defaults:
   - paths: default.yaml
   - preprocess: v1.yaml
   - hydra: default.yaml
-optimizer.config.learning_rate:
-train: human_size
+train: product_encode

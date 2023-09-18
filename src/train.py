@@ -1,4 +1,5 @@
 import os
+import sys
 import argparse
 import torch
 import hydra
@@ -81,4 +82,5 @@ def main(cfg: DictConfig):
 
 
 if __name__ == "__main__":
+    sys.argv.append("hydra.run.dir=./outputs/${now:%Y-%m-%d_%H-%M-%S}")
     main()

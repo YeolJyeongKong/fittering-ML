@@ -1,0 +1,4 @@
+api_server:
+  traffic:
+    timeout: 500
+    max_concurrency: 50

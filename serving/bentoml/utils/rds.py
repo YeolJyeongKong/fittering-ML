@@ -25,13 +25,14 @@ def load_ProductImageGender(cursor, product_ids):
             ON P.PRODUCT_ID = I.PRODUCT_ID;
         """
     else:
-        product_ids = str(tuple(product_ids)).replace(",)", ")")
+        product_ids = tuple(product_ids + [0])
+
         query = f"""
             SELECT P.PRODUCT_ID AS PRODUCT_ID, I.URL AS URL, P.GENDER AS GENDER
             FROM PRODUCT P
             INNER JOIN (SELECT URL, PRODUCT_ID FROM IMAGEPATH WHERE THUMBNAIL = 1) I
             ON P.PRODUCT_ID = I.PRODUCT_ID
-            WHERE P.PRODUCT_ID IN {tuple(product_ids)};
+            WHERE P.PRODUCT_ID IN {product_ids};
         """
     cursor.execute(query)
     products = cursor.fetchall()

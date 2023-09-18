@@ -238,14 +238,15 @@ class AutoEncoderModule(pl.LightningModule):
 
 
 class ProductModule(pl.LightningModule):
-    def __init__(self, learning_rate=1e-4, bbox_loss_weight=1.0):
+    def __init__(self, learning_rate=1e-4, bbox_loss_weight=0.5, embedding_dim=64):
         super().__init__()
         self.learning_rate = learning_rate
         self.bbox_loss_weight = bbox_loss_weight
+        self.embedding_dim = embedding_dim
 
         self.save_hyperparameters()
 
-        self.model = ProductClassifyBox()
+        self.model = ProductClassifyBox(embedding_dim=self.embedding_dim)
 
         self.acc = Accuracy(task="multiclass", num_classes=50)
         self.mae = MeanAbsoluteError()
@@ -261,7 +262,9 @@ class ProductModule(pl.LightningModule):
         pred_class, pred_bbox = self.model(img)
         loss_class = F.cross_entropy(pred_class, label_class)
         loss_bbox = F.mse_loss(pred_bbox, label_bbox)
-        loss = loss_class + self.bbox_loss_weight * loss_bbox
+        loss = (
+            1 - self.bbox_loss_weight
+        ) * loss_class + self.bbox_loss_weight * loss_bbox
 
         acc = self.acc(pred_class, label_class)
         mae = self.mae(pred_bbox, label_bbox)

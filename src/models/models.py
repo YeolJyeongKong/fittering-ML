@@ -212,14 +212,18 @@ class AutoEncoder(nn.Module):
 
 
 class ProductImageEncode(nn.Module):
-    def __init__(self):
+    def __init__(self, embedding_dim):
         super().__init__()
         base = efficientnet.from_name("efficientnet-b0")
         base._blocks = nn.Sequential(*base._blocks)
 
         layers = list(base.children())[:-6]
-        layers += [nn.Conv2d(320, 64, kernel_size=1, stride=1, padding=0, bias=False)]
-        layers += [nn.BatchNorm2d(64)]
+        layers += [
+            nn.Conv2d(
+                320, embedding_dim, kernel_size=1, stride=1, padding=0, bias=False
+            )
+        ]
+        layers += [nn.BatchNorm2d(embedding_dim)]
         layers += [nn.AdaptiveAvgPool2d(1)]
         self.net = nn.Sequential(*layers)
 
@@ -228,11 +232,11 @@ class ProductImageEncode(nn.Module):
 
 
 class ProductClassifyBox(nn.Module):
-    def __init__(self):
+    def __init__(self, embedding_dim):
         super().__init__()
-        self.encoder = ProductImageEncode()
-        self.fc_classify = nn.Linear(64, 50)
-        self.fc_box = nn.Linear(64, 4)
+        self.encoder = ProductImageEncode(embedding_dim=embedding_dim)
+        self.fc_classify = nn.Linear(embedding_dim, 50)
+        self.fc_box = nn.Linear(embedding_dim, 4)
 
     def forward(self, x):
         x = self.encoder(x)
@@ -242,5 +246,7 @@ class ProductClassifyBox(nn.Module):
 if __name__ == "__main__":
     from torchinfo import summary
 
-    model = AutoEncoder(input_shape=[512, 512], nblocks=5, filters=32, latent_dim=256)
-    summary(model, (16, 1, 512, 512))
+    # model = AutoEncoder(input_shape=[512, 512], nblocks=5, filters=32, latent_dim=256)
+    # summary(model, (16, 1, 512, 512))
+    model = ProductImageEncode()
+    summary(model, (16, 3, 256, 256))

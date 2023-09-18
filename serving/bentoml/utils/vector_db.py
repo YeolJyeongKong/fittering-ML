@@ -1,4 +1,5 @@
 import random
+import pymilvus
 from pymilvus import (
     connections,
     utility,
@@ -27,16 +28,20 @@ def delete_collection(collection_name):
 
 
 def add_vector(collection_name, embedded, product_id, gender):
-    image_embedding_collection = Collection("image_embedding_collection")
+    image_embedding_collection = Collection(collection_name)
     image_embedding_collection.load()
-
     entities = [
         product_id,
         gender,
         embedded,
     ]
-    image_embedding_collection.insert(entities)
-    image_embedding_collection.flush()
+    try:
+        image_embedding_collection.insert(entities)
+        image_embedding_collection.flush()
+
+    except pymilvus.exceptions.ParamError:
+        delete_collection(collection_name)
+        save_collection(collection_name, embedded, product_id, gender)
 
 
 def save_collection(collection_name, embedded, product_id, gender):
@@ -48,7 +53,9 @@ def save_collection(collection_name, embedded, product_id, gender):
             auto_id=False,
         ),
         FieldSchema(name="gender", dtype=DataType.VARCHAR, max_length=1),
-        FieldSchema(name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=64),
+        FieldSchema(
+            name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=embedded.shape[1]
+        ),
     ]
     schema = CollectionSchema(fields, "product_image_vector")
 
