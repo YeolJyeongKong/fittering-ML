@@ -12,24 +12,35 @@ svc = bentoml.Service(
     "fashion-ubf",
 )
 
-rds_conn = rds.connect(
-    host=rds_info.host,
-    user=rds_info.user,
-    password=rds_info.password,
-    db=rds_info.db,
-    port=rds_info.port,
-)
+
+@svc.on_startup
+async def connect_db(context: bentoml.Context):
+    rds_conn = rds.connect(
+        host=rds_info.host,
+        user=rds_info.user,
+        password=rds_info.password,
+        db=rds_info.db,
+        port=rds_info.port,
+    )
+    context.state["rds_conn"] = rds_conn
+
+
+@svc.on_shutdown
+async def disconnect_db(context: bentoml.Context):
+    context.state["rds_conn"].close()
 
 
 @svc.api(
     input=JSON(pydantic_model=feature.UserId),
     output=JSON(pydantic_model=feature.Product_Output),
 )
-def fashion_ubf(input: feature.UserId) -> feature.Product_Output:
+def fashion_ubf(
+    input: feature.UserId, context: bentoml.Context
+) -> feature.Product_Output:
     userid_dict = input.dict()
     user_id = userid_dict["user_id"]
 
-    cursor = rds_conn.cursor()
+    cursor = context.state["rds_conn"].cursor()
     users_df = rds.load_UserMeas(cursor)
 
     user_info = users_df[users_df["USER_ID"] == user_id]

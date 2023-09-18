@@ -5,6 +5,7 @@ import torchvision.transforms.functional as F
 from bentoml.io import JSON
 import asyncio
 import torch
+import bentoml
 import pyrootutils
 
 from serving.bentoml.utils import feature, s3, rds, vector_db, bento_svc, utils
@@ -22,8 +23,13 @@ from extras.constant import *
 ) = bento_svc.product_recommendation_svc(root_dir)
 
 
-@svc.api(input=JSON(pydantic_model=feature.NewProductId), output=JSON())
-def product_encode(input: feature.NewProductId) -> Dict[str, Any]:
+@svc.on_startup
+async def connect_db(context: bentoml.Context):
+    if utils.local_check():
+        vector_db.connect(host=MILVUS_PUBLIC_HOST, port=MILVUS_PORT)
+    else:
+        vector_db.connect(host=MILVUS_PRIVATE_HOST, port=MILVUS_PORT)
+
     rds_conn = rds.connect(
         host=rds_info.host,
         user=rds_info.user,
@@ -31,15 +37,23 @@ def product_encode(input: feature.NewProductId) -> Dict[str, Any]:
         db=rds_info.db,
         port=rds_info.port,
     )
-    if utils.local_check():
-        vector_db.connect(host=MILVUS_PUBLIC_HOST, port=MILVUS_PORT)
-    else:
-        vector_db.connect(host=MILVUS_PRIVATE_HOST, port=MILVUS_PORT)
+    context.state["rds_conn"] = rds_conn
 
+
+@svc.on_shutdown
+async def disconnect_db(context: bentoml.Context):
+    vector_db.disconnect()
+    context.state["rds_conn"].close()
+
+
+@svc.api(input=JSON(pydantic_model=feature.NewProductId), output=JSON())
+def product_encode(
+    input: feature.NewProductId, context: bentoml.Context
+) -> Dict[str, Any]:
     input = input.dict()
     product_ids = input["product_ids"]
 
-    cursor = rds_conn.cursor()
+    cursor = context.state["rds_conn"].cursor()
     products_df = rds.load_ProductImageGender(cursor, product_ids)
 
     imgs_tensor, nframes = asyncio.run(
@@ -69,8 +83,6 @@ def product_encode(input: feature.NewProductId) -> Dict[str, Any]:
             gender=products_df["GENDER"].to_list(),
         )
 
-    vector_db.disconnect()
-    rds_conn.close()
     return {"status": 200}
 
 
@@ -78,25 +90,15 @@ def product_encode(input: feature.NewProductId) -> Dict[str, Any]:
     input=JSON(pydantic_model=feature.Product_Input),
     output=JSON(pydantic_model=feature.Product_Output),
 )
-def fashion_cbf(input: feature.Product_Input) -> feature.Product_Output:
+def fashion_cbf(
+    input: feature.Product_Input, context: bentoml.Context
+) -> feature.Product_Output:
     top_k = 12
     recommendation_n = 12
 
     product_dict = input.dict()
     product_ids = product_dict["product_ids"]
     product_gender = product_dict["gender"]
-
-    rds_conn = rds.connect(
-        host=rds_info.host,
-        user=rds_info.user,
-        password=rds_info.password,
-        db=rds_info.db,
-        port=rds_info.port,
-    )
-    if utils.local_check():
-        vector_db.connect(host=MILVUS_PUBLIC_HOST, port=MILVUS_PORT)
-    else:
-        vector_db.connect(host=MILVUS_PRIVATE_HOST, port=MILVUS_PORT)
 
     if product_ids:
         recommendation_products = vector_db.search_vector(
@@ -108,7 +110,7 @@ def fashion_cbf(input: feature.Product_Input) -> feature.Product_Output:
         )
 
     else:
-        cursor = rds_conn.cursor()
+        cursor = context["rds_conn"].cursor()
         products_df = rds.load_Product(cursor)
 
         product_top_view = products_df[
@@ -119,6 +121,4 @@ def fashion_cbf(input: feature.Product_Input) -> feature.Product_Output:
             product_top_view[:top_k]["product_id"].sample(n=recommendation_n).to_list()
         )
 
-    vector_db.disconnect()
-    rds_conn.close()
     return {"product_ids": recommendation_products}
