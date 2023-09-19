@@ -8,6 +8,8 @@ include:
 - serving/
 - src/
 - .project-root
+exclude:
+- __pycache__
 python:
   requirements_txt: ./serving/bentoml/requirements.serving.txt
 models:

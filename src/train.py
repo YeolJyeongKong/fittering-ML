@@ -43,7 +43,8 @@ def human_size_main(cfg: DictConfig) -> None:
     ]
 
     output_dir = os.path.relpath(cfg.paths.output_dir, root_dir)
-    bentofile.include += [output_dir]
+    bentofile.include += [output_dir + "/.hydra"]
+    bentofile.include += [output_dir + "/bentofile.yaml"]
     bentofile.docker.env.OUTPUT_DIR = output_dir
 
     return bentofile
@@ -60,7 +61,8 @@ def product_encode_main(cfg: DictConfig):
     bentofile.service = "serving.bentoml.service_fashion_cbf:svc"
     bentofile.models = [product_tag]
     output_dir = os.path.relpath(cfg.paths.output_dir, root_dir)
-    bentofile.include += [output_dir]
+    bentofile.include += [output_dir + "/.hydra"]
+    bentofile.include += [output_dir + "/bentofile.yaml"]
     bentofile.docker.env.OUTPUT_DIR = output_dir
 
     return bentofile

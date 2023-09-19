@@ -8,6 +8,8 @@ include:
 - serving/bentoml/
 - src/
 - .project-root
+exclude:
+- __pycache__
 python:
   requirements_txt: ./serving/bentoml/requirements.fashion_ubf.txt
 docker:
