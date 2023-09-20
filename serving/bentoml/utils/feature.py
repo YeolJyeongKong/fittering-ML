@@ -3,13 +3,12 @@ from typing import List
 
 
 class ImageS3Path(BaseModel):
-    front: str = "0/front.jpg"
-    side: str = "0/side.jpg"
+    image_fname: str = "front.jpg"
 
 
 class User(BaseModel):
-    front: str = "0/front_masked.jpg"
-    side: str = "0/side_masked.jpg"
+    front: str = "front.jpg"
+    side: str = "side.jpg"
     height: float = 177
     weight: float = 65
     sex: str = "M"

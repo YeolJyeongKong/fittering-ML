@@ -53,46 +53,29 @@ def masking_user(
     input: feature.ImageS3Path, context: bentoml.Context
 ) -> feature.ImageS3Path:
     input = input.dict()
-    front_path = input["front"]
-    side_path = input["side"]
+    image_fname = input["image_fname"]
 
-    front_masked_path = str(Path(front_path).parent / "front_masked.jpg")
-    side_masked_path = str(Path(side_path).parent / "side_masked.jpg")
-    front = Image.open(
+    image = Image.open(
         context.state["s3_obj"].get_object(
-            Bucket=constant.BUCKET_NAME_HUMAN, Key=front_path
+            Bucket=constant.BUCKET_NAME_HUMAN,
+            Key=constant.S3_BUCKET_PATH_BODY + image_fname,
         )["Body"]
     )
-    front_size = front.size
-    side = Image.open(
-        context.state["s3_obj"].get_object(
-            Bucket=constant.BUCKET_NAME_HUMAN, Key=side_path
-        )["Body"]
-    )
-    side_size = side.size
+    image_size = image.size
 
-    front = segment_preprocess(front).unsqueeze(0)
-    side = segment_preprocess(side).unsqueeze(0)
-    masked = segment_runner.run(torch.cat([front, side], dim=0))
+    image = segment_preprocess(image).unsqueeze(0)
+    masked = segment_runner.run(image)
 
-    front_str = preprocess.to_bytearray(masked[0], front_size)
-
-    side_str = preprocess.to_bytearray(masked[1], side_size)
+    image_str = preprocess.to_bytearray(masked[0], image_size)
 
     context.state["s3_obj"].put_object(
         Bucket=constant.BUCKET_NAME_HUMAN,
-        Key=front_masked_path,
-        Body=front_str,
-        ContentType="image/jpg",
-    )
-    context.state["s3_obj"].put_object(
-        Bucket=constant.BUCKET_NAME_HUMAN,
-        Key=side_masked_path,
-        Body=side_str,
+        Key=constant.S3_BUCKET_PATH_SILHOUETTE + image_fname,
+        Body=image_str,
         ContentType="image/jpg",
     )
 
-    return {"front": front_masked_path, "side": side_masked_path}
+    return {"image_fname": image_fname}
 
 
 @svc.api(
@@ -101,17 +84,19 @@ def masking_user(
 )
 def human_size(input: feature.User, context: bentoml.Context) -> feature.UserSize:
     input = input.dict()
-    front_path = input["front"]
-    side_path = input["side"]
+    front_fname = input["front"]
+    side_fname = input["side"]
 
     front = Image.open(
         context.state["s3_obj"].get_object(
-            Bucket=constant.BUCKET_NAME_HUMAN, Key=front_path
+            Bucket=constant.BUCKET_NAME_HUMAN,
+            Key=constant.S3_BUCKET_PATH_SILHOUETTE + front_fname,
         )["Body"]
     ).convert("L")
     side = Image.open(
         context.state["s3_obj"].get_object(
-            Bucket=constant.BUCKET_NAME_HUMAN, Key=side_path
+            Bucket=constant.BUCKET_NAME_HUMAN,
+            Key=constant.S3_BUCKET_PATH_SILHOUETTE + side_fname,
         )["Body"]
     ).convert("L")
 
