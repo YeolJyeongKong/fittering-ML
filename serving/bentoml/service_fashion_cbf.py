@@ -1,20 +1,23 @@
-import requests
+import math
+import logging
 from typing import Dict, Any
-import pandas as pd
-import torchvision.transforms.functional as F
+from tqdm import tqdm
 from bentoml.io import JSON
 import asyncio
 import torch
 import bentoml
 import pyrootutils
 
-from serving.bentoml.utils import feature, s3, rds, vector_db, bento_svc, utils
+from serving.bentoml.utils import feature, rds, vector_db, bento_svc, utils
 
 root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
 from serving.bentoml import rds_info
 from extras.constant import *
 
+
+bentoml_logger = logging.getLogger()
+bentoml_logger.setLevel(logging.WARNING)
 
 (
     svc,
@@ -56,31 +59,38 @@ def product_encode(
     cursor = context.state["rds_conn"].cursor()
     products_df = rds.load_ProductImageGender(cursor, product_ids)
 
-    imgs_tensor, nframes = asyncio.run(
-        s3.load_img(products_df["URL"].to_list(), product_encode_preprocess)
-    )
-
-    imgs_encoded = []
-    for i in range(imgs_tensor.shape[0] // 16 + 1):
-        imgs_encoded.append(
-            product_encode_runner.run(imgs_tensor[i * 16 : (i + 1) * 16])
+    imgs_encoded_lst = []
+    for i in tqdm(
+        range(math.ceil(products_df.shape[0] / INFERENCE_BATCH_SIZE)), desc="Inference"
+    ):
+        imgs_tensor, nframes = asyncio.run(
+            utils.load_img(
+                products_df["image"].to_list()[
+                    i * INFERENCE_BATCH_SIZE : (i + 1) * INFERENCE_BATCH_SIZE
+                ],
+                product_encode_preprocess,
+            )
         )
-    imgs_encoded = torch.cat(imgs_encoded, dim=0)
-    imgs_encoded = utils.mean_nframe_encoded(imgs_encoded, nframes)
+
+        imgs_encoded = product_encode_runner.run(imgs_tensor)
+        imgs_encoded = utils.mean_nframe_encoded(imgs_encoded, nframes)
+        imgs_encoded_lst.append(imgs_encoded)
+
+    imgs_encoded_tensor = torch.cat(imgs_encoded_lst, dim=0)
 
     if vector_db.exist_collection(MILVUS_COLLECTION_NAME):
         vector_db.add_vector(
             collection_name=MILVUS_COLLECTION_NAME,
-            embedded=imgs_encoded.numpy(),
-            product_id=products_df["PRODUCT_ID"].to_list(),
-            gender=products_df["GENDER"].to_list(),
+            embedded=imgs_encoded_tensor.numpy(),
+            product_id=products_df["product_id"].to_list(),
+            gender=products_df["gender"].to_list(),
         )
     else:
         vector_db.save_collection(
             collection_name=MILVUS_COLLECTION_NAME,
-            embedded=imgs_encoded.numpy(),
-            product_id=products_df["PRODUCT_ID"].to_list(),
-            gender=products_df["GENDER"].to_list(),
+            embedded=imgs_encoded_tensor.numpy(),
+            product_id=products_df["product_id"].to_list(),
+            gender=products_df["gender"].to_list(),
         )
 
     return {"status": 200}
@@ -93,9 +103,6 @@ def product_encode(
 def fashion_cbf(
     input: feature.Product_Input, context: bentoml.Context
 ) -> feature.Product_Output:
-    top_k = 12
-    recommendation_n = 12
-
     product_dict = input.dict()
     product_ids = product_dict["product_ids"]
     product_gender = product_dict["gender"]
@@ -105,12 +112,12 @@ def fashion_cbf(
             MILVUS_COLLECTION_NAME,
             product_ids,
             product_gender,
-            top_k,
-            recommendation_n,
+            TOP_K,
+            RECOMMENDATION_N,
         )
 
     else:
-        cursor = context["rds_conn"].cursor()
+        cursor = context.state["rds_conn"].cursor()
         products_df = rds.load_Product(cursor)
 
         product_top_view = products_df[
@@ -118,7 +125,7 @@ def fashion_cbf(
         ].sort_values(by="view", ascending=False)
 
         recommendation_products = (
-            product_top_view[:top_k]["product_id"].sample(n=recommendation_n).to_list()
+            product_top_view[:TOP_K]["product_id"].sample(n=RECOMMENDATION_N).to_list()
         )
 
     return {"product_ids": recommendation_products}

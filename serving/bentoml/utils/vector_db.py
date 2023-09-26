@@ -93,7 +93,7 @@ def search_vector(collection_name, product_ids, gender, top_k, recommendation_n)
 
     search_params = {
         "metric_type": "L2",
-        "params": {"nprobe": 10},
+        "params": {"nprobe": 1000},
     }
 
     result = image_embedding_collection.search(
@@ -108,7 +108,7 @@ def search_vector(collection_name, product_ids, gender, top_k, recommendation_n)
     search_result = []
     for hits in result:
         for hit in hits:
-            search_result += [hit.entity.get("product_id")]
+            search_result += [hit.id]
     random.shuffle(search_result)
 
     return search_result[:recommendation_n]

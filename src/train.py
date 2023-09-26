@@ -13,6 +13,8 @@ from extras import paths
 from src.inference import encoder_inference
 from src.trainer import human_size_trainer, product_encode_trainer
 
+RUN_NAME = "${now:%Y-%m-%d_%H-%M-%S}"
+
 
 def human_size_main(cfg: DictConfig) -> None:
     segment_tag = human_size_trainer.save_segment(cfg, saved=True)
@@ -41,11 +43,7 @@ def human_size_main(cfg: DictConfig) -> None:
         autoencoder_tag,
         regression_tag,
     ]
-
-    output_dir = os.path.relpath(cfg.paths.output_dir, root_dir)
-    bentofile.include += [output_dir + "/.hydra"]
-    bentofile.include += [output_dir + "/bentofile.yaml"]
-    bentofile.docker.env.OUTPUT_DIR = output_dir
+    bentofile.labels.run_name = cfg.paths.output_dir.split("/")[-1]
 
     return bentofile
 
@@ -60,10 +58,7 @@ def product_encode_main(cfg: DictConfig):
     bentofile.python.requirements_txt = "./serving/bentoml/requirements.fashion_cbf.txt"
     bentofile.service = "serving.bentoml.service_fashion_cbf:svc"
     bentofile.models = [product_tag]
-    output_dir = os.path.relpath(cfg.paths.output_dir, root_dir)
-    bentofile.include += [output_dir + "/.hydra"]
-    bentofile.include += [output_dir + "/bentofile.yaml"]
-    bentofile.docker.env.OUTPUT_DIR = output_dir
+    bentofile.labels.run_name = cfg.paths.output_dir.split("/")[-1]
 
     return bentofile
 
@@ -84,5 +79,5 @@ def main(cfg: DictConfig):
 
 
 if __name__ == "__main__":
-    sys.argv.append("hydra.run.dir=./outputs/${now:%Y-%m-%d_%H-%M-%S}")
+    sys.argv.append(f"hydra.run.dir=./outputs/{RUN_NAME}")
     main()

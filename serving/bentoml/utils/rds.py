@@ -19,20 +19,16 @@ def connect(host, user, password, db, port):
 def load_ProductImageGender(cursor, product_ids):
     if product_ids == []:
         query = f"""
-            SELECT P.PRODUCT_ID AS PRODUCT_ID, I.URL AS URL, P.GENDER AS GENDER
-            FROM PRODUCT P
-            INNER JOIN (SELECT URL, PRODUCT_ID FROM IMAGEPATH WHERE THUMBNAIL = 1) I
-            ON P.PRODUCT_ID = I.PRODUCT_ID;
+            SELECT product_id, image, gender
+            FROM product
         """
     else:
         product_ids = tuple(product_ids + [0])
 
         query = f"""
-            SELECT P.PRODUCT_ID AS PRODUCT_ID, I.URL AS URL, P.GENDER AS GENDER
-            FROM PRODUCT P
-            INNER JOIN (SELECT URL, PRODUCT_ID FROM IMAGEPATH WHERE THUMBNAIL = 1) I
-            ON P.PRODUCT_ID = I.PRODUCT_ID
-            WHERE P.PRODUCT_ID IN {product_ids};
+            SELECT product_id, image, gender
+            FROM product
+            WHERE product_id IN {product_ids};
         """
     cursor.execute(query)
     products = cursor.fetchall()

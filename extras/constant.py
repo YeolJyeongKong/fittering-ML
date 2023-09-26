@@ -1,3 +1,9 @@
+# ------------------------ fashion-cbf ------------------------
+INFERENCE_BATCH_SIZE = 1
+TOP_K = 12
+RECOMMENDATION_N = 12
+
+
 # ------------------------ label order ------------------------
 MEASUREMENTS_ORDER = [
     "height",

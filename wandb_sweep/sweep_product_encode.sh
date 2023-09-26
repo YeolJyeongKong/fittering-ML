@@ -3,7 +3,12 @@ export WANDB_DIR=./wandb_sweep/
   
 wandb sweep wandb_sweep/sweep_product_encode.yaml > temp_output.txt 2>&1
 
-last_line=$(tail -n 1 temp_output.txt)
+output_path="temp_output.txt"
+output=$(<"$output_path")
+export SWEEP_ID=$(echo "$output" | awk '/Creating sweep with ID:/ {print $6}')
 rm temp_output.txt
-RUN=$(echo "$last_line" | awk -F':' '{print $NF}')
-$RUN
+
+wandb agent sinjy1203/product_encode_sweep/$SWEEP_ID
+
+python wandb_sweep/sweep_product_encode_best.py
+

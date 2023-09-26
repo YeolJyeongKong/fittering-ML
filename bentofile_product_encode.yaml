@@ -1,0 +1,19 @@
+service: serving.bentoml.service_fashion_cbf:svc
+labels:
+  owner: yeoljyeongkong
+  stage: dev
+  run_name: 2023-09-12_22-13-02
+include:
+- extras/
+- serving/
+- .project-root
+exclude:
+- __pycache__
+python:
+  requirements_txt: ./serving/bentoml/requirements.fashion_cbf.txt
+models:
+- product_encode:g7zt7icrqgtes5cw
+docker:
+  system_packages:
+  - libgl1-mesa-glx
+  - libglib2.0-0

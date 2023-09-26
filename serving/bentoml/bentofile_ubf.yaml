@@ -11,7 +11,7 @@ include:
 exclude:
 - __pycache__
 python:
-  requirements_txt: ./serving/bentoml/requirements.fashion_ubf.txt
+  requirements_txt: ./serving/bentoml/requirements/requirements.fashion_ubf.txt
 docker:
   system_packages:
   - libgl1-mesa-glx

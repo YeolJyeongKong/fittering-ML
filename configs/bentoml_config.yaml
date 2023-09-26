@@ -1,4 +1,15 @@
+runners:
+  logging:
+    access:
+      enabled: false
 api_server:
   traffic:
     timeout: 500
     max_concurrency: 50
+  logging:
+    access:
+      enabled: true
+      request_content_length: true
+      request_content_type: true
+      response_content_length: true
+      response_content_type: true

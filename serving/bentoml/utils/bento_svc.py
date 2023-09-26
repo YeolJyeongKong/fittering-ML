@@ -1,20 +1,21 @@
 import os
 import sys
-import pandas as pd
 import bentoml
-import hydra
 from omegaconf import OmegaConf
+import pyrootutils
+
+ROOT_DIR = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
+from extras import paths
 
 
 def human_size_svc(root_dir):
-    output_dir = os.environ["OUTPUT_DIR"]
-    cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
+    segment_model = bentoml.pytorch.get("segment:latest")
+    segment_preprocess = segment_model.custom_objects["preprocess"]
+    segment_runner = segment_model.to_runner()
 
-    segment_preprocess = hydra.utils.instantiate(cfg.preprocess.segment)
-    segment_runner = bentoml.pytorch.get("segment:latest").to_runner()
-
-    autoencoder_preprocess = hydra.utils.instantiate(cfg.preprocess.autoencoder)
-    autoencoder_runner = bentoml.pytorch_lightning.get("autoencoder:latest").to_runner()
+    autoencoder_model = bentoml.pytorch_lightning.get("autoencoder:latest")
+    autoencoder_preprocess = autoencoder_model.custom_objects["preprocess"]
+    autoencoder_runner = autoencoder_model.to_runner()
     del sys.modules["prometheus_client"]
 
     regression_runner = bentoml.sklearn.get("regression:latest").to_runner()
@@ -34,12 +35,10 @@ def human_size_svc(root_dir):
 
 
 def product_recommendation_svc(root_dir):
-    output_dir = os.environ["OUTPUT_DIR"]
-    cfg = OmegaConf.load(os.path.join(root_dir, output_dir, ".hydra/config.yaml"))
-    bentofile_yml = OmegaConf.load(os.path.join(root_dir, output_dir, "bentofile.yaml"))
-
-    product_encode_preprocess = hydra.utils.instantiate(cfg.preprocess.product_encode)
-    product_encode_runner = bentoml.pytorch.get(bentofile_yml.models[0]).to_runner()
+    bentofile_yml = OmegaConf.load(paths.BENTOFILE_BEST_SWEEP_PATH)
+    bento_model = bentoml.pytorch.get(bentofile_yml.models[0])
+    product_encode_preprocess = bento_model.custom_objects["preprocess"]
+    product_encode_runner = bento_model.to_runner()
     # del sys.modules["prometheus_client"]
 
     svc = bentoml.Service(

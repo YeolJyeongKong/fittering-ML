@@ -1,32 +1,14 @@
-import os
-import json
-import sys
-from typing import Dict, Any
 from PIL import Image
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from pathlib import Path
-import base64
-from io import BytesIO
-
 import torch
-import torchvision.transforms.functional as F
 import bentoml
 from bentoml.io import JSON
-import boto3
-import pymysql
-from omegaconf import OmegaConf
-import hydra
-from pydantic import BaseModel
 import pyrootutils
 
-from serving.bentoml.utils import feature, s3, bento_svc
+from serving.bentoml.utils import feature, s3, bento_svc, utils
 
 root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
 from extras import paths, constant
-from src.utils import preprocess
 
 
 (
@@ -66,7 +48,7 @@ def masking_user(
     image = segment_preprocess(image).unsqueeze(0)
     masked = segment_runner.run(image)
 
-    image_str = preprocess.to_bytearray(masked[0], image_size)
+    image_str = utils.to_bytearray(masked[0], image_size)
 
     context.state["s3_obj"].put_object(
         Bucket=constant.BUCKET_NAME_HUMAN,

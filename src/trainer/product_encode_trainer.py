@@ -44,6 +44,10 @@ def train_ProductModule(cfg: DictConfig, wandb_logger):
     trainer.fit(module, datamodule=dm)
     trainer.test(datamodule=dm)
 
-    bentoml_product = bentoml.pytorch.save_model("product_encode", module.model.encoder)
+    bentoml_product = bentoml.pytorch.save_model(
+        "product_encode",
+        module.model.encoder,
+        custom_objects={"preprocess": dm.transform},
+    )
 
     return str(bentoml_product.tag)

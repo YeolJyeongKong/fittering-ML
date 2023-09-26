@@ -2,9 +2,9 @@ program: src/train.py
 entity: "sinjy1203"
 project: "product_encode_sweep"
 method: bayes
-run_cap: 20
+run_cap: 1
 metric:
-  goal: maxmize
+  goal: maximize
   name: val_acc
 early_terminate:
   type: hyperband
@@ -13,7 +13,7 @@ parameters:
   train:
     value: "product_encode"
   trainer.product_encode.max_epochs:
-    value: 5
+    value: 1
   model.product_encode.learning_rate:
     max: 0.001
     min: 0.00001
