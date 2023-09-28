@@ -8,9 +8,20 @@ from pymilvus import (
     DataType,
     Collection,
 )
+import pyrootutils
+
+root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
+from serving.bentoml.utils import utils
+from extras.constant import *
 
 
-def connect(host, port):
+def connect():
+    if utils.local_check():
+        host = MILVUS_PUBLIC_HOST
+        port = MILVUS_PORT
+    else:
+        host = MILVUS_PRIVATE_HOST
+        port = MILVUS_PORT
     connections.connect("default", host=host, port=port)
 
 

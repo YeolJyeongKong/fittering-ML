@@ -1,21 +1,23 @@
-service: serving.bentoml.service_fashion_cbf:svc
+service: serving.bentoml.service_human_size:svc
 labels:
   owner: yeoljyeongkong
   stage: dev
-  run_name: 2023-09-14_16-56-21
+  run_name: 2023-09-27_20-55-14
 include:
 - extras/
 - serving/
 - .project-root
-- best_sweep/
+- sweep_best_bentofile/
 - src/models/
 - configs/bentoml_config.yaml
 exclude:
 - __pycache__
 python:
-  requirements_txt: ./serving/bentoml/requirements/requirements.serving.txt
+  requirements_txt: ./serving/bentoml/requirements/requirements.human_size.txt
 models:
-- product_encode:pixyxcb7e6gdy5cw
+- segment:latest
+- autoencoder:4yoljxc5fwie25cw
+- regression:xf7cx6c5f2ie25cw
 docker:
   system_packages:
   - libgl1-mesa-glx

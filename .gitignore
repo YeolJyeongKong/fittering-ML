@@ -3,6 +3,7 @@
 
 # rds password
 rds_info.py
+rds_info_.py
 
 # dataset
 *.zip

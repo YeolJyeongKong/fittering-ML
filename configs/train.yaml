@@ -6,4 +6,4 @@ defaults:
   - paths: default.yaml
   - preprocess: v1.yaml
   - hydra: default.yaml
-train: product_encode
+train: human_size

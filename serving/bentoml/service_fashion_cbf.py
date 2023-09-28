@@ -23,40 +23,20 @@ bentoml_logger.setLevel(logging.WARNING)
     svc,
     product_encode_runner,
     product_encode_preprocess,
-) = bento_svc.product_recommendation_svc(root_dir)
-
-
-@svc.on_startup
-async def connect_db(context: bentoml.Context):
-    if utils.local_check():
-        vector_db.connect(host=MILVUS_PUBLIC_HOST, port=MILVUS_PORT)
-    else:
-        vector_db.connect(host=MILVUS_PRIVATE_HOST, port=MILVUS_PORT)
-
-    rds_conn = rds.connect(
-        host=rds_info.host,
-        user=rds_info.user,
-        password=rds_info.password,
-        db=rds_info.db,
-        port=rds_info.port,
-    )
-    context.state["rds_conn"] = rds_conn
-
-
-@svc.on_shutdown
-async def disconnect_db(context: bentoml.Context):
-    vector_db.disconnect()
-    context.state["rds_conn"].close()
+) = bento_svc.product_recommendation_svc()
 
 
 @svc.api(input=JSON(pydantic_model=feature.NewProductId), output=JSON())
 def product_encode(
     input: feature.NewProductId, context: bentoml.Context
 ) -> Dict[str, Any]:
+    vector_db.connect()
+    rds_conn = rds.connect()
+    cursor = rds_conn.cursor()
+
     input = input.dict()
     product_ids = input["product_ids"]
 
-    cursor = context.state["rds_conn"].cursor()
     products_df = rds.load_ProductImageGender(cursor, product_ids)
 
     imgs_encoded_lst = []
@@ -93,6 +73,9 @@ def product_encode(
             gender=products_df["gender"].to_list(),
         )
 
+    vector_db.disconnect()
+    rds_conn.close()
+
     return {"status": 200}
 
 
@@ -108,6 +91,8 @@ def fashion_cbf(
     product_gender = product_dict["gender"]
 
     if product_ids:
+        vector_db.connect()
+
         recommendation_products = vector_db.search_vector(
             MILVUS_COLLECTION_NAME,
             product_ids,
@@ -115,9 +100,10 @@ def fashion_cbf(
             TOP_K,
             RECOMMENDATION_N,
         )
-
+        vector_db.disconnect()
     else:
-        cursor = context.state["rds_conn"].cursor()
+        rds_conn = rds.connect()
+        cursor = rds_conn.cursor()
         products_df = rds.load_Product(cursor)
 
         product_top_view = products_df[
@@ -127,5 +113,6 @@ def fashion_cbf(
         recommendation_products = (
             product_top_view[:TOP_K]["product_id"].sample(n=RECOMMENDATION_N).to_list()
         )
+        rds_conn.close()
 
     return {"product_ids": recommendation_products}

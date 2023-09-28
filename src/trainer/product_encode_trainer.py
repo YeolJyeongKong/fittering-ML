@@ -35,7 +35,9 @@ def train_ProductModule(cfg: DictConfig, wandb_logger):
         callbacks=[
             EarlyStopping(monitor="val_loss"),
             ModelCheckpoint(
-                dirpath="./model_weights/product_encode.ckpt", monitor="val_loss"
+                dirpath="./model_weights",
+                filename="product_encode.ckpt",
+                monitor="val_loss",
             ),
             utils.ProductLogger(val_samples=val_samples, idx2category=dm.idx2category),
         ],

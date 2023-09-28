@@ -18,7 +18,6 @@ RUN_NAME = "${now:%Y-%m-%d_%H-%M-%S}"
 
 def human_size_main(cfg: DictConfig) -> None:
     segment_tag = human_size_trainer.save_segment(cfg, saved=True)
-
     cfg.logger.human_size.name = cfg.logger.human_size.name.split("/")[-1]
     wandb_logger = hydra.utils.instantiate(cfg.logger.human_size)
     module, datamodule, autoencoder_tag = human_size_trainer.train_AutoEncoderModule(
@@ -36,7 +35,9 @@ def human_size_main(cfg: DictConfig) -> None:
     )
 
     bentofile = OmegaConf.load(paths.BENTOFILE_DEFAULT_PATH)
-    bentofile.python.requirements_txt = "./serving/bentoml/requirements.human_size.txt"
+    bentofile.python.requirements_txt = (
+        "./serving/bentoml/requirements/requirements.human_size.txt"
+    )
     bentofile.service = "serving.bentoml.service_human_size:svc"
     bentofile.models = [
         segment_tag,
@@ -55,7 +56,9 @@ def product_encode_main(cfg: DictConfig):
     product_tag = product_encode_trainer.train_ProductModule(cfg, wandb_logger)
 
     bentofile = OmegaConf.load(paths.BENTOFILE_DEFAULT_PATH)
-    bentofile.python.requirements_txt = "./serving/bentoml/requirements.fashion_cbf.txt"
+    bentofile.python.requirements_txt = (
+        "./serving/bentoml/requirements/requirements.fashion_cbf.txt"
+    )
     bentofile.service = "serving.bentoml.service_fashion_cbf:svc"
     bentofile.models = [product_tag]
     bentofile.labels.run_name = cfg.paths.output_dir.split("/")[-1]

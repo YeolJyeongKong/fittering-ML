@@ -248,5 +248,5 @@ if __name__ == "__main__":
 
     # model = AutoEncoder(input_shape=[512, 512], nblocks=5, filters=32, latent_dim=256)
     # summary(model, (16, 1, 512, 512))
-    model = ProductImageEncode()
+    model = ProductImageEncode(embedding_dim=128)
     summary(model, (16, 3, 256, 256))

@@ -10,7 +10,7 @@ parameters:
   train:
     value: "human_size"
   trainer.autoencoder.max_epochs:
-    value: 3
+    value: 10
   model.autoencoder.learning_rate:
     max: 0.001
     min: 0.00001
@@ -24,7 +24,7 @@ parameters:
     min: 0.1
     max: 0.9
   preprocess.autoencoder.transforms.2.size:
-    values: [[128, 128], [256, 256], [512, 512]]
+    values: [[64, 64], [128, 128], [256, 256], [512, 512]]
   model.regression.alpha:
     min: 0.1
     max: 0.9

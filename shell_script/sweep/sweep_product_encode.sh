@@ -1,7 +1,7 @@
 #!/bin/bash
-export WANDB_DIR=./wandb_sweep/
-  
-wandb sweep wandb_sweep/sweep_product_encode.yaml > temp_output.txt 2>&1
+export WANDB_DIR=./wandb_sweep
+
+wandb sweep ./configs/sweep_product_encode.yaml > temp_output.txt 2>&1
 
 output_path="temp_output.txt"
 output=$(<"$output_path")
@@ -10,5 +10,5 @@ rm temp_output.txt
 
 wandb agent sinjy1203/product_encode_sweep/$SWEEP_ID
 
-python wandb_sweep/sweep_product_encode_best.py
+python shell_script/sweep/sweep_product_encode_best.py
 

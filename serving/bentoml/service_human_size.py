@@ -18,13 +18,7 @@ from extras import paths, constant
     regression_runner,
     segment_preprocess,
     autoencoder_preprocess,
-) = bento_svc.human_size_svc(root_dir)
-
-
-@svc.on_startup
-async def connect_s3(context: bentoml.Context):
-    s3_obj = s3.connect(paths.S3_ACCESS_KEY_PATH)
-    context.state["s3_obj"] = s3_obj
+) = bento_svc.human_size_svc()
 
 
 @svc.api(
@@ -34,11 +28,13 @@ async def connect_s3(context: bentoml.Context):
 def masking_user(
     input: feature.ImageS3Path, context: bentoml.Context
 ) -> feature.ImageS3Path:
+    s3_obj = s3.connect(paths.S3_ACCESS_KEY_PATH)
+
     input = input.dict()
     image_fname = input["image_fname"]
 
     image = Image.open(
-        context.state["s3_obj"].get_object(
+        s3_obj.get_object(
             Bucket=constant.BUCKET_NAME_HUMAN,
             Key=constant.S3_BUCKET_PATH_BODY + image_fname,
         )["Body"]
@@ -50,7 +46,7 @@ def masking_user(
 
     image_str = utils.to_bytearray(masked[0], image_size)
 
-    context.state["s3_obj"].put_object(
+    s3_obj.put_object(
         Bucket=constant.BUCKET_NAME_HUMAN,
         Key=constant.S3_BUCKET_PATH_SILHOUETTE + image_fname,
         Body=image_str,
@@ -65,18 +61,19 @@ def masking_user(
     output=JSON(pydantic_model=feature.UserSize),
 )
 def human_size(input: feature.User, context: bentoml.Context) -> feature.UserSize:
+    s3_obj = s3.connect(paths.S3_ACCESS_KEY_PATH)
     input = input.dict()
     front_fname = input["front"]
     side_fname = input["side"]
 
     front = Image.open(
-        context.state["s3_obj"].get_object(
+        s3_obj.get_object(
             Bucket=constant.BUCKET_NAME_HUMAN,
             Key=constant.S3_BUCKET_PATH_SILHOUETTE + front_fname,
         )["Body"]
     ).convert("L")
     side = Image.open(
-        context.state["s3_obj"].get_object(
+        s3_obj.get_object(
             Bucket=constant.BUCKET_NAME_HUMAN,
             Key=constant.S3_BUCKET_PATH_SILHOUETTE + side_fname,
         )["Body"]

@@ -1,15 +1,33 @@
 import pandas as pd
 import pymysql
+import pyrootutils
+
+root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
+from serving.bentoml import rds_info, rds_info_
 
 
-def connect(host, user, password, db, port):
+def connect():
     rds = pymysql.connect(
-        host=host,
-        user=user,
-        password=password,
-        db=db,
+        host=rds_info.host,
+        user=rds_info.user,
+        password=rds_info.password,
+        db=rds_info.db,
         charset="utf8",
-        port=port,
+        port=rds_info.port,
+        autocommit=True,
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+    return rds
+
+
+def connect_():
+    rds = pymysql.connect(
+        host=rds_info_.host,
+        user=rds_info_.user,
+        password=rds_info_.password,
+        db=rds_info_.db,
+        charset="utf8",
+        port=rds_info_.port,
         autocommit=True,
         cursorclass=pymysql.cursors.DictCursor,
     )

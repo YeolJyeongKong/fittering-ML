@@ -17,13 +17,17 @@ from extras import paths
 
 def save_segment(cfg: DictConfig, saved=True):
     if saved:
-        return "segment:udnfvsbqigxhfzys"
+        return "segment:latest"
 
     segment = hydra.utils.instantiate(cfg.model.segment)
     segment.load_state_dict(
         torch.load(paths.SEGMODEL_PATH, map_location=torch.device("cpu"))
     )
-    bentoml_segment = bentoml.pytorch.save_model("segment", segment)
+    bentoml_segment = bentoml.pytorch.save_model(
+        "segment",
+        segment.to("cpu"),
+        custom_objects={"preprocess": hydra.utils.instantiate(cfg.preprocess.segment)},
+    )
     return str(bentoml_segment.tag)
 
 
@@ -44,7 +48,9 @@ def train_AutoEncoderModule(cfg: DictConfig, wandb_logger):
         callbacks=[
             EarlyStopping(monitor="val_loss"),
             ModelCheckpoint(
-                dirpath="./model_weights/human_size.ckpt", monitor="val_loss"
+                dirpath="./model_weights",
+                filename="human_size.ckpt",
+                monitor="val_loss",
             ),
             utils.ImagePredictionLogger(val_samples=val_samples),
         ],
@@ -53,7 +59,11 @@ def train_AutoEncoderModule(cfg: DictConfig, wandb_logger):
     trainer.fit(module, datamodule=dm)
     trainer.test(datamodule=dm)
 
-    bentoml_autoencoder = bentoml.pytorch_lightning.save_model("autoencoder", module)
+    bentoml_autoencoder = bentoml.pytorch_lightning.save_model(
+        "autoencoder",
+        module,
+        custom_objects={"preprocess": dm.transform},
+    )
 
     return module, dm, str(bentoml_autoencoder.tag)
 

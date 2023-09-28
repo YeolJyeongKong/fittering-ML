@@ -1,0 +1,25 @@
+service: serving.bentoml.service_fashion_cbf:svc
+labels:
+  owner: yeoljyeongkong
+  stage: dev
+  run_name: 2023-09-14_16-56-21
+include:
+- extras/
+- serving/
+- .project-root
+- bentofile/sweep_best/
+- src/models/
+- src/SemanticGuidedHumanMatting/
+- src/data/
+exclude:
+- __pycache__
+python:
+  requirements_txt: ./serving/bentoml/requirements/requirements.serving.txt
+models:
+- product_encode:pixyxcb7e6gdy5cw
+docker:
+  system_packages:
+  - libgl1-mesa-glx
+  - libglib2.0-0
+  env:
+    BENTOML_CONFIG: ./src/serving/bentoml/bentoml_config.yaml
