@@ -2,7 +2,7 @@ pipeline {
    agent any
 
    environment {
-      BENTOML = "/usr/local/bin/bentoml"
+      // BENTOML = "/usr/local/bin/bentoml"
       CLUSTER_NAME = 'ML-cluster'
       SERVICE_NAME = 'human-size-service'
    }
@@ -16,7 +16,7 @@ pipeline {
 
       stage('Import Bento') {
          steps {
-            sh 'ls /usr/local/bin'
+            echo $BENTOML
             sh '$BENTOML import s3://fittering-bento/human-size-predict.bento'
          }
       }
