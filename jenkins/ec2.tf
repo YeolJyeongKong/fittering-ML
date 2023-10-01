@@ -5,7 +5,7 @@ resource "aws_instance" "jenkins" {
     vpc_security_group_ids = [
         aws_security_group.ssh_jenkins.id
     ]
-    iam_instance_profile = aws_iam_instance_profile.ecr_fully_access_profile.name
+    iam_instance_profile = aws_iam_instance_profile.ecr_s3_full_access_profile.name
     tags = {
         Name = "jenkins"
     }
