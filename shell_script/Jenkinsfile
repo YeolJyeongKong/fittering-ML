@@ -2,6 +2,7 @@ pipeline {
    agent any
 
    environment {
+      PATH = "/usr/bin/python3:${env.PATH}"
       CLUSTER_NAME = 'ML-cluster'
       SERVICE_NAME = 'human-size-service'
    }
@@ -15,6 +16,7 @@ pipeline {
 
       stage('Import Bento') {
          steps {
+            sh 'python3 --version'
             sh 'bentoml import s3://fittering-bento/human-size-predict.bento'
          }
       }
