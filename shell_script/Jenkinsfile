@@ -2,7 +2,7 @@ pipeline {
    agent any
 
    environment {
-      // PATH = "/usr/bin/python3:${env.PATH}"
+      PATH = "/usr/local/bin:${env.PATH}"
       CLUSTER_NAME = 'ML-cluster'
       SERVICE_NAME = 'human-size-service'
    }
