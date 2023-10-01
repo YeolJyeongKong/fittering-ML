@@ -2,7 +2,6 @@ pipeline {
    agent any
 
    environment {
-      // BENTOML = "/usr/local/bin/bentoml"
       CLUSTER_NAME = 'ML-cluster'
       SERVICE_NAME = 'human-size-service'
    }
