@@ -13,6 +13,12 @@ pipeline {
          }
       }
 
+      stage('Delete old Bento') {
+         steps {
+            sh 'bentoml delete human_size_predict -y'
+         }
+      }
+
       stage('Import Bento') {
          steps {
             sh 'bentoml import s3://fittering-bento/human-size-predict.bento'
