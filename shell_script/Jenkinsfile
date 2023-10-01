@@ -1,11 +1,12 @@
 pipeline {
    agent any
-   stages {
-      environment {
-         CLUSTER_NAME=ML-cluster
-         SERVICE_NAME=human-size-service
-      }
 
+   environment {
+      CLUSTER_NAME=ML-cluster
+      SERVICE_NAME=human-size-service
+   }
+   
+   stages {
       stage('Clone repository') {
             checkout scm
       }
