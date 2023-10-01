@@ -8,15 +8,15 @@ pipeline {
    }
 
    stages {
-      stage('Clone repository') {
-         steps {
-            checkout scm
-         }
-      }
+      // stage('Clone repository') {
+      //    steps {
+      //       checkout scm
+      //    }
+      // }
 
       stage('Import Bento') {
          steps {
-            echo $BENTOML
+            ls -al
             sh '$BENTOML import s3://fittering-bento/human-size-predict.bento'
          }
       }
