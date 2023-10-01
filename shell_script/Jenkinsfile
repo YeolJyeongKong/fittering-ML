@@ -1,23 +1,24 @@
 node {
-     stage('Clone repository') {
-         checkout scm
-     }
+      CLUSTER_NAME=ML-cluster
+      SERVICE_NAME=human-size-service
 
-     stage('Build Bento') {
-        sh 'bentoml build -f bentofile/sweep_best/bentofile_human_size.yaml'
-     }
+      stage('Clone repository') {
+            checkout scm
+      }
 
-     stage ('Containerize') {
-        sh 'bentoml containerize human_size_predict:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict:latest'
-     }
+      stage('Import Bento') {
+         sh 'bentoml import s3://fittering-bento/human-size-predict.bento'
+      }
 
-     stage('Push image') {
-         sh 'rm  ~/.dockercfg || true'
-         sh 'rm ~/.docker/config.json || true'
-         
-         docker.withRegistry('https://210651441624.dkr.ecr.ap-northeast-2.amazonaws.com', 'ecr:ap-northeast-2:aws-ecr-full-access') {
-             app.push("${env.BUILD_NUMBER}")
-             app.push("latest")
-     }
-  }
+      stage ('Containerize') {
+         sh 'bentoml containerize human_size_predict:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict:latest'
+      }
+
+      stage('Push image') {
+         sh 'aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com'
+         sh 'docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict:latest'
+      }
+      stage('Update ECS service') {
+         sh 'aws ecs update-service --cluster ${CLUSTER_NAME} --service ${SERVICE_NAME} --force-new-deployment'
+      }
 }

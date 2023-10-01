@@ -1,1 +1,2 @@
 bentoml
+fs-s3fs
