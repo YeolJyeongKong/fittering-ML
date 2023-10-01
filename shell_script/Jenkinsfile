@@ -11,7 +11,7 @@ pipeline {
       stage('Clone repository') {
          steps {
             checkout scm
-            ls PATH
+            sh 'ls PATH'
          }
       }
 
