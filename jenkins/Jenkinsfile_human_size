@@ -15,7 +15,13 @@ pipeline {
 
       stage('Delete old Bento') {
          steps {
-            sh 'bentoml delete human_size_predict -y'
+            script {
+               try {
+                  sh 'bentoml delete human_size_predict -y'
+               } catch (e){
+                  echo 'No old Bento to delete'
+               }
+            }
          }
       }
 

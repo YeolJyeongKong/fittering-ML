@@ -1,6 +1,12 @@
 FROM jenkins/jenkins:jdk11
 USER root
-COPY requirements.txt ./
+# COPY requirements.txt ./
+RUN apt-get update
+RUN apt-get install -y python3 python3-pip
+RUN rm /var/lib/dpkg/info/python*
+RUN dpkg --configure -a
+RUN apt update -y
+
 RUN apt-get update && \
  apt-get -y install apt-transport-https \
  ca-certificates \
@@ -16,5 +22,5 @@ curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gp
  stable" && \
  apt-get update && \
  apt-get -y install docker-ce
-RUN apt update && \
-    apt install -y python3 python3-pip
+# RUN apt update && \
+#     apt install -y python3 python3-pip 
