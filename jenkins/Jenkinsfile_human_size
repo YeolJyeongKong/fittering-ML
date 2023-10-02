@@ -27,7 +27,9 @@ pipeline {
 
       stage('Import Bento') {
          steps {
-            sh 'bentoml import s3://fittering-bento/human-size-predict.bento'
+            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
+               sh 'bentoml import s3://fittering-bento/human-size-predict.bento'
+            }
          }
       }
 
@@ -39,13 +41,17 @@ pipeline {
 
       stage('Push image') {
          steps {
-            sh 'aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com'
-            sh 'docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict:latest'
+            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
+               sh 'aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com'
+               sh 'docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict:latest'
+            }
          }
       }
       stage('Update ECS service') {
          steps {
-            sh 'aws ecs update-service --cluster ${CLUSTER_NAME} --service ${SERVICE_NAME} --force-new-deployment'
+            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
+               sh 'aws ecs update-service --cluster ${CLUSTER_NAME} --service ${SERVICE_NAME} --force-new-deployment'
+            }
          }
       }
    }
