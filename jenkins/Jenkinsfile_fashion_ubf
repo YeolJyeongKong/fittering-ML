@@ -4,7 +4,7 @@ pipeline {
    environment {
       CLUSTER_NAME = 'ML-cluster'
       BENTO_NAME = 'fashion-ubf'
-      SERVICE_NAME = '${BENTO_NAME}-service'
+      SERVICE_NAME = 'fashion-ubf-service'
    }
 
    stages {
