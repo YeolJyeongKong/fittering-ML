@@ -1,4 +1,7 @@
 #!/bin/bash
+source ~/anaconda3/etc/profile.d/conda.sh
+conda activate fittering-measurements
+
 export WANDB_DIR=./wandb_sweep
 
 wandb sweep ./configs/sweep_product_encode.yaml > temp_output.txt 2>&1

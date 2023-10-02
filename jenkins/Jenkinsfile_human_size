@@ -1,0 +1,58 @@
+pipeline {
+   agent any
+
+   environment {
+      CLUSTER_NAME = 'ML-cluster'
+      SERVICE_NAME = 'human-size-service'
+   }
+
+   stages {
+      stage('Clone repository') {
+         steps {
+            checkout scm
+         }
+      }
+
+      stage('Delete old Bento') {
+         steps {
+            script {
+               try {
+                  sh 'bentoml delete human_size_predict -y'
+               } catch (e){
+                  echo 'No old Bento to delete'
+               }
+            }
+         }
+      }
+
+      stage('Import Bento') {
+         steps {
+            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
+               sh 'bentoml import s3://fittering-bento/human-size-predict.bento'
+            }
+         }
+      }
+
+      stage ('Containerize') {
+         steps {
+            sh 'bentoml containerize human_size_predict:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict:latest'
+         }
+      }
+
+      stage('Push image') {
+         steps {
+            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
+               sh 'aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com'
+               sh 'docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict:latest'
+            }
+         }
+      }
+      stage('Update ECS service') {
+         steps {
+            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
+               sh 'aws ecs update-service --cluster ${CLUSTER_NAME} --service ${SERVICE_NAME} --force-new-deployment'
+            }
+         }
+      }
+   }
+}

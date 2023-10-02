@@ -2,7 +2,7 @@ service: serving.bentoml.service_human_size:svc
 labels:
   owner: yeoljyeongkong
   stage: dev
-  run_name: 2023-09-27_23-35-56
+  run_name: 2023-09-30_23-50-33
 include:
 - extras/
 - serving/
@@ -17,8 +17,8 @@ python:
   requirements_txt: ./serving/bentoml/requirements/requirements.human_size.txt
 models:
 - segment:latest
-- autoencoder:nl2iwls5is7w65cw
-- regression:jk43p2c5iw7w65cw
+- autoencoder:b5abf2c7vsywu5cw
+- regression:2scro7s7vsywu5cw
 docker:
   system_packages:
   - libgl1-mesa-glx
