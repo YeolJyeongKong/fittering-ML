@@ -104,7 +104,7 @@ def search_vector(collection_name, product_ids, gender, top_k, recommendation_n)
 
     search_params = {
         "metric_type": "L2",
-        "params": {"nprobe": 1000},
+        "params": {"nprobe": 12},
     }
 
     result = image_embedding_collection.search(
