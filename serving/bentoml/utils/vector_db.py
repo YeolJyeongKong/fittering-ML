@@ -84,8 +84,9 @@ def save_collection(collection_name, embedded, product_id, gender):
     image_embedding_collection.flush()
 
     index = {
-        "index_type": "FLAT",
+        "index_type": "IVF_FLAT",
         "metric_type": "L2",
+        "params": {"nlist": 128},
     }
 
     image_embedding_collection.create_index("embeddings", index)
@@ -103,6 +104,7 @@ def search_vector(collection_name, product_ids, gender, top_k, recommendation_n)
 
     search_params = {
         "metric_type": "L2",
+        "params": {"nprobe": 16},
     }
 
     result = image_embedding_collection.search(
