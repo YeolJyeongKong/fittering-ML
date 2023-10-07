@@ -27,7 +27,7 @@ def main(cfg: DictConfig):
         "segment",
         segment.to("cpu"),
         custom_objects={"preprocess": hydra.utils.instantiate(cfg.preprocess.segment)},
-        signatures={"__call__": {"batchable": True}},
+        # signatures={"__call__": {"batchable": True}},
     )
 
 
