@@ -7,7 +7,7 @@ include:
 - extras/
 - serving/
 - .project-root
-- bentofile/sweep_best/
+- bentofile/
 - src/models/
 - src/SemanticGuidedHumanMatting/
 - src/data/
@@ -23,3 +23,4 @@ docker:
   - libglib2.0-0
   env:
     BENTOML_CONFIG: ./src/serving/bentoml/bentoml_config.yaml
+  dockerfile_template: ./shell_script/container_test/bentofile_local/Dockerfile.template
