@@ -1,0 +1,19 @@
+service: serving.bentoml.service_fashion_ubf:svc
+labels:
+  owner: yeoljyeongkong
+  stage: dev
+include:
+- extras/
+- configs/
+- serving/bentoml/
+- src/
+- .project-root
+exclude:
+- __pycache__
+python:
+  requirements_txt: ./serving/bentoml/requirements/requirements.fashion_ubf.txt
+docker:
+  system_packages:
+  - libgl1-mesa-glx
+  - libglib2.0-0
+  dockerfile_template: ./shell_script/container_test/bentofile_local/Dockerfile.template

@@ -62,4 +62,4 @@ S3_ACCESS_KEY_PATH = (
 BENTOFILE_DEFAULT_PATH = os.path.join(ROOT_DIR, "bentofile/bentofile_default.yaml")
 
 # best sweep bentofile path
-BENTOFILE_BEST_SWEEP_PATH = os.path.join(ROOT_DIR, "bentofile/sweep_best")
+BENTOFILE_BEST_SWEEP_PATH = os.path.join(ROOT_DIR, "bentofile")
