@@ -12,6 +12,11 @@ root_dir = pyrootutils.setup_root(__file__, indicator=".project-root", pythonpat
 from extras import paths, constant
 
 
+def prefix_exits(bucket, path, s3_obj):
+    res = s3_obj.list_objects_v2(Bucket=bucket, Prefix=path, MaxKeys=1)
+    return "Contents" in res
+
+
 def connect(s3_access_key_path):
     try:
         s3_access_key = pd.read_csv(s3_access_key_path)

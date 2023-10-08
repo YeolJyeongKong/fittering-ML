@@ -2,6 +2,8 @@ from PIL import Image
 import torch
 import bentoml
 from bentoml.io import JSON
+from botocore.exceptions import ClientError
+import logging
 import pyrootutils
 
 from serving.bentoml.utils import feature, s3, bento_svc, utils
@@ -19,6 +21,7 @@ from extras import paths, constant
     segment_preprocess,
     autoencoder_preprocess,
 ) = bento_svc.human_size_svc()
+bentoml_logger = logging.getLogger("bentoml")
 
 
 @svc.api(
@@ -56,6 +59,11 @@ def masking_user(
     return {"image_fname": image_fname}
 
 
+def prefix_exits(bucket, path, s3_obj):
+    res = s3_obj.list_objects_v2(Bucket=bucket, Prefix=path, MaxKeys=1)
+    return "Contents" in res
+
+
 @svc.api(
     input=JSON(pydantic_model=feature.User),
     output=JSON(pydantic_model=feature.UserSize),
@@ -66,18 +74,25 @@ def human_size(input: feature.User, context: bentoml.Context) -> feature.UserSiz
     front_fname = input["front"]
     side_fname = input["side"]
 
-    front = Image.open(
-        s3_obj.get_object(
-            Bucket=constant.BUCKET_NAME_HUMAN,
-            Key=constant.S3_BUCKET_PATH_SILHOUETTE + front_fname,
-        )["Body"]
-    ).convert("L")
-    side = Image.open(
-        s3_obj.get_object(
-            Bucket=constant.BUCKET_NAME_HUMAN,
-            Key=constant.S3_BUCKET_PATH_SILHOUETTE + side_fname,
-        )["Body"]
-    ).convert("L")
+    try:
+        front = Image.open(
+            s3_obj.get_object(
+                Bucket=constant.BUCKET_NAME_HUMAN,
+                Key=constant.S3_BUCKET_PATH_SILHOUETTE + front_fname,
+            )["Body"]
+        ).convert("L")
+        side = Image.open(
+            s3_obj.get_object(
+                Bucket=constant.BUCKET_NAME_HUMAN,
+                Key=constant.S3_BUCKET_PATH_SILHOUETTE + side_fname,
+            )["Body"]
+        ).convert("L")
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "NoSuchKey":
+            context.response.status_code = 404
+            error_msg = f"{e.response['Error']['Key']} is not found in s3"
+            bentoml_logger.error(error_msg)
+            return {"msg": error_msg}
 
     front = autoencoder_preprocess(front).unsqueeze(dim=0)
     side = autoencoder_preprocess(side).unsqueeze(dim=0)
@@ -94,7 +109,8 @@ def human_size(input: feature.User, context: bentoml.Context) -> feature.UserSiz
     pred = regression_runner.run(z)
 
     return {
-        "height": pred[0][0],
+        "height": height[0][0].tolist(),
+        "weight": weight[0][0].tolist(),
         "chest": pred[0][1],
         "waist": pred[0][2],
         "hip": pred[0][3],

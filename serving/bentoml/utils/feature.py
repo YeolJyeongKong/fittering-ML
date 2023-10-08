@@ -16,6 +16,7 @@ class User(BaseModel):
 
 class UserSize(BaseModel):
     height: float
+    weight: float
     chest: float
     waist: float
     hip: float
