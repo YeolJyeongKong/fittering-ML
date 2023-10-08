@@ -109,13 +109,13 @@ def human_size(input: feature.User, context: bentoml.Context) -> feature.UserSiz
     pred = regression_runner.run(z)
 
     return {
-        "height": height[0][0].tolist(),
-        "weight": weight[0][0].tolist(),
-        "chest": pred[0][1],
-        "waist": pred[0][2],
-        "hip": pred[0][3],
-        "thigh": pred[0][4],
-        "arm": pred[0][5],
-        "leg": pred[0][6],
-        "shoulder": pred[0][7],
+        "height": round(height[0][0].tolist(), 2),
+        "weight": round(weight[0][0].tolist(), 2),
+        "chest": round(pred[0][1], 2),
+        "waist": round(pred[0][2], 2),
+        "hip": round(pred[0][3], 2),
+        "thigh": round(pred[0][4], 2),
+        "arm": round(pred[0][5], 2),
+        "leg": round(pred[0][6], 2),
+        "shoulder": round(pred[0][7], 2),
     }
