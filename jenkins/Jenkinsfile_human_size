@@ -26,7 +26,7 @@ pipeline {
 
       stage('Build Bento'){
          steps {
-            sh 'bentoml build bentoml/bentofile_human_size.yaml'
+            sh '${VENV_PATH}/bentoml build bentoml/bentofile_human_size.yaml'
          }
       }
 
