@@ -16,7 +16,7 @@ exclude:
 python:
   requirements_txt: ./serving/bentoml/requirements/requirements.human_size.txt
 models:
-- segment:latest
+- segment:vrovutde2kinkyix
 - autoencoder:b5abf2c7vsywu5cw
 - regression:2scro7s7vsywu5cw
 docker:

@@ -22,3 +22,4 @@ for target_bentomodel in target_bentomodels:
         except bentoml.exceptions.NotFound:
             pass
         bentoml.models.import_model(f"{s3_dir}/{model_name}.bentomodel")
+        print(bentoml.models.list())
