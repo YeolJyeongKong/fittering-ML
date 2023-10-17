@@ -14,6 +14,12 @@ pipeline {
          }
       }
 
+      stage('Activate virtualenv') {
+         steps {
+            sh 'conda activate human-size-env'
+         }
+      }
+
       stage('Load Bentomodel') {
          steps {
             withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
