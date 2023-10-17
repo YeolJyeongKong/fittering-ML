@@ -18,7 +18,7 @@ pipeline {
 
       stage('test') {
          steps {
-            sh 'ls ${VENV_PAHT}'
+            sh 'ls ${VENV_PATH}'
          }
       }
 
