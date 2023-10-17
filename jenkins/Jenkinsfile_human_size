@@ -33,7 +33,7 @@ pipeline {
 
       stage ('Containerize') {
          steps {
-            sh '${VENV_PATH}bentoml containerize ${BENTO_NAME} -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}'
+            sh '${VENV_PATH}/bentoml containerize ${BENTO_NAME} -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}'
          }
       }
 
