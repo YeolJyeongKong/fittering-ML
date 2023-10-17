@@ -16,6 +16,12 @@ pipeline {
          }
       }
 
+      stage('test') {
+         steps {
+            sh 'ls ${VENV_PAHT}'
+         }
+      }
+
       stage('Load Bentomodel') {
          steps {
             withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
