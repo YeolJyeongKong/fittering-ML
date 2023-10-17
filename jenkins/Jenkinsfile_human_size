@@ -18,8 +18,11 @@ pipeline {
 
       stage('Activate virtual environment') {
          steps {
-            sh '. /var/jenkins_home/miniconda3/bin/activate human-size-env'
-            sh 'python --version'
+            sh """
+               . /var/jenkins_home/miniconda3/bin/activate human-size-env
+               python --version
+            """ 
+            // sh 'python --version'
          }
       }
 
