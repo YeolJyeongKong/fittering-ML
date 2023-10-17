@@ -19,14 +19,26 @@ pipeline {
       stage('Load Bentomodel') {
          steps {
             withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
-               sh '${VENV_PATH}/python ${WORKSPACE}/jenkins/load_bentomodel.py -p ${BENTOFILE_PATH} -s3 ${MODEL_DIR}'
+               sh """
+                  #!/usr/bin/env bash
+                  source /var/jenkins_home/miniconda3/etc/profile.d/conda.sh
+                  conda activate human-size-env
+                  python jenkins/load_bentomodel.py -p ${BENTOFILE_PATH} -s3 ${MODEL_DIR}
+               """
+               // sh '${VENV_PATH}/python ${WORKSPACE}/jenkins/load_bentomodel.py -p ${BENTOFILE_PATH} -s3 ${MODEL_DIR}'
             }
          }
       }
 
       stage('Build Bento'){
          steps {
-            sh '${VENV_PATH}/bentoml build -f bentofile/bentofile_human_size.yaml'
+            sh """
+               #!/usr/bin/env bash
+               source /var/jenkins_home/miniconda3/etc/profile.d/conda.sh
+               conda activate human-size-env
+               bentoml build -f bentofile/bentofile_human_size.yaml
+            """
+            // sh '${VENV_PATH}/bentoml build -f bentofile/bentofile_human_size.yaml'
          }
       }
 
