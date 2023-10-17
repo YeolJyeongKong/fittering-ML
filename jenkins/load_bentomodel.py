@@ -14,6 +14,7 @@ target_bentomodels = OmegaConf.load(bentofile_path).models
 
 for target_bentomodel in target_bentomodels:
     model_name = target_bentomodel.split(":")[0]
+    print(model_name)
     try:
         bentoml.models.get(target_bentomodel)
     except bentoml.exceptions.NotFound:
