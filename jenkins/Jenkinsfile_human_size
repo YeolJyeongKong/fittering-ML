@@ -5,6 +5,8 @@ pipeline {
       CLUSTER_NAME = 'ML-cluster'
       SERVICE_NAME = 'human-size-service'
       MODEL_DIR = 's3://fittering-bentoml-models'
+      CONDA_ENV = 'human-size-env'
+      BENTOFILE_PATH = '${WORKSPACE}/bentofile/bentofile_human_size.yaml'
    }
 
    stages {
@@ -16,14 +18,17 @@ pipeline {
 
       stage('Activate virtualenv') {
          steps {
-            sh 'conda activate human-size-env'
+            sh '''#!/usr/bin/env bash
+                source ~/miniconda3/etc/profile.d/conda.sh
+                conda activate ${CONDA_ENV}
+            '''
          }
       }
 
       stage('Load Bentomodel') {
          steps {
             withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
-               sh 'python ${WORKSPACE}/jenkins/load_bentomodel.py -p ${WORKSPACE}/bentofile/bentofile_human_size.yaml -s3 ${MODEL_DIR}'
+               sh 'python ${WORKSPACE}/jenkins/load_bentomodel.py -p ${BENTOFILE_PATH} -s3 ${MODEL_DIR}'
             }
          }
       }
