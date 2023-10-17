@@ -17,5 +17,8 @@ for target_bentomodel in target_bentomodels:
     try:
         bentoml.models.get(target_bentomodel)
     except bentoml.exceptions.NotFound:
-        bentoml.models.delete(model_name)
+        try:
+            bentoml.models.delete(model_name)
+        except bentoml.exceptions.NotFound:
+            pass
         bentoml.models.import_model(f"{s3_dir}/{model_name}.bentomodel")
