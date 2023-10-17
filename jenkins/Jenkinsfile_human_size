@@ -5,7 +5,7 @@ pipeline {
       CLUSTER_NAME = 'ML-cluster'
       SERVICE_NAME = 'human-size-service'
       MODEL_DIR = 's3://fittering-bentoml-models'
-      VENV_PATH = '~/miniconda3/envs/human-size-env/bin'
+      VENV_PATH = '/var/jenkins_home/miniconda3/envs/human-size-env/bin'
       BENTOFILE_PATH = 'bentofile/bentofile_human_size.yaml'
    }
 
