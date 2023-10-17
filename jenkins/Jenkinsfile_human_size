@@ -18,7 +18,7 @@ pipeline {
 
       stage('Activate virtual environment') {
          steps {
-            sh 'source ~/miniconda3/bin/activate human-size-env'
+            sh '. ~/miniconda3/bin/activate human-size-env'
          }
       }
 
