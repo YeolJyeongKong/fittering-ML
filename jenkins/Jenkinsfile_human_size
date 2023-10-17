@@ -24,11 +24,11 @@ pipeline {
          }
       }
 
-      // stage('Build Bento'){
-      //    steps {
-      //       sh 'bentoml build ${WORKSPACE}/bentoml'
-      //    }
-      // }
+      stage('Build Bento'){
+         steps {
+            sh 'bentoml build bentoml/bentofile_human_size.yaml'
+         }
+      }
 
       // stage ('Containerize') {
       //    steps {
