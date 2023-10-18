@@ -24,7 +24,9 @@ pipeline {
       }
 
       stage('ls') {
-         sh "tree"
+         steps {
+            sh "tree"
+         }
       }
 
       // stage('Load Bentomodel') {
