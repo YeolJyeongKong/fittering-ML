@@ -14,53 +14,63 @@ pipeline {
       stage('Clone repository') {
          steps {
             checkout scm
-         }
-      }
 
-      stage('Load Bentomodel') {
-         steps {
-            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
-               sh '${VENV_PATH}/python jenkins/load_bentomodel.py -p ${BENTOFILE_PATH} -s3 ${MODEL_DIR}'
+            withCredentials([file(credentialsId: 'applicationDB', variable: 'rds_info'), 
+                             file(credentialsId: 'testDB', variable: 'rds_info_')]){
+               sh "cp /$rds_info serving/bentoml/rds_info.py"
+               sh "cp /$rds_info_ serving/bentoml/rds_info_.py"
             }
          }
       }
 
-      stage('Build Bento'){
-         steps {
-            sh '${VENV_PATH}/bentoml build -f ${BENTOFILE_PATH}'
-         }
+      stage('ls') {
+         sh "tree"
       }
 
-      stage ('Containerize') {
-         steps {
-            sh '${VENV_PATH}/bentoml containerize ${BENTO_NAME}:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}:latest'
-         }
-      }
+      // stage('Load Bentomodel') {
+      //    steps {
+      //       withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
+      //          sh '${VENV_PATH}/python jenkins/load_bentomodel.py -p ${BENTOFILE_PATH} -s3 ${MODEL_DIR}'
+      //       }
+      //    }
+      // }
 
-      stage('Push image') {
-         steps {
-            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
-               sh 'aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com'
-               sh 'docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}:latest'
-            }
-         }
-      }
+      // stage('Build Bento'){
+      //    steps {
+      //       sh '${VENV_PATH}/bentoml build -f ${BENTOFILE_PATH}'
+      //    }
+      // }
 
-      stage('Update ECS service') {
-         steps {
-            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
-               sh 'aws ecs update-service --cluster ${CLUSTER_NAME} --service ${SERVICE_NAME} --force-new-deployment'
-            }
-         }
-      }
+      // stage ('Containerize') {
+      //    steps {
+      //       sh '${VENV_PATH}/bentoml containerize ${BENTO_NAME}:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}:latest'
+      //    }
+      // }
 
-      stage('Delete Bento & Docker images') {
-         steps {
-            sh '${VENV_PATH}/bentoml list'
-            sh '${VENV_PATH}/bentoml delete ${BENTO_NAME} -y'
-            sh 'docker images 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}'
-            sh 'docker rmi -f $(docker images -q 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME})'
-         }
-      }
+      // stage('Push image') {
+      //    steps {
+      //       withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
+      //          sh 'aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com'
+      //          sh 'docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}:latest'
+      //       }
+      //    }
+      // }
+
+      // stage('Update ECS service') {
+      //    steps {
+      //       withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
+      //          sh 'aws ecs update-service --cluster ${CLUSTER_NAME} --service ${SERVICE_NAME} --force-new-deployment'
+      //       }
+      //    }
+      // }
+
+      // stage('Delete Bento & Docker images') {
+      //    steps {
+      //       sh '${VENV_PATH}/bentoml list'
+      //       sh '${VENV_PATH}/bentoml delete ${BENTO_NAME} -y'
+      //       sh 'docker images 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}'
+      //       sh 'docker rmi -f $(docker images -q 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME})'
+      //    }
+      // }
    }
 }
