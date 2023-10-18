@@ -4,6 +4,10 @@ pipeline {
    environment {
       CLUSTER_NAME = 'ML-cluster'
       SERVICE_NAME = 'human-size-service'
+      MODEL_DIR = 's3://fittering-bentoml-models'
+      VENV_PATH = '/var/jenkins_home/miniconda3/envs/human-size-env/bin'
+      BENTOFILE_PATH = 'bentofile/bentofile_human_size.yaml'
+      BENTO_NAME = 'human_size_predict'
    }
 
    stages {
@@ -13,29 +17,23 @@ pipeline {
          }
       }
 
-      stage('Delete old Bento') {
+      stage('Load Bentomodel') {
          steps {
-            script {
-               try {
-                  sh 'bentoml delete human_size_predict -y'
-               } catch (e){
-                  echo 'No old Bento to delete'
-               }
+            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
+               sh '${VENV_PATH}/python jenkins/load_bentomodel.py -p ${BENTOFILE_PATH} -s3 ${MODEL_DIR}'
             }
          }
       }
 
-      stage('Import Bento') {
+      stage('Build Bento'){
          steps {
-            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
-               sh 'bentoml import s3://fittering-bento/human-size-predict.bento'
-            }
+            sh '${VENV_PATH}/bentoml build -f ${BENTOFILE_PATH}'
          }
       }
 
       stage ('Containerize') {
          steps {
-            sh 'bentoml containerize human_size_predict:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict:latest'
+            sh '${VENV_PATH}/bentoml containerize ${BENTO_NAME}:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}:latest'
          }
       }
 
@@ -43,15 +41,25 @@ pipeline {
          steps {
             withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
                sh 'aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com'
-               sh 'docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/human_size_predict:latest'
+               sh 'docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}:latest'
             }
          }
       }
+
       stage('Update ECS service') {
          steps {
             withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
                sh 'aws ecs update-service --cluster ${CLUSTER_NAME} --service ${SERVICE_NAME} --force-new-deployment'
             }
+         }
+      }
+
+      stage('Delete Bento & Docker images') {
+         steps {
+            sh '${VENV_PATH}/bentoml list'
+            sh '${VENV_PATH}/bentoml delete ${BENTO_NAME} -y'
+            sh 'docker images 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}'
+            sh 'docker rmi -f $(docker images -q 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME})'
          }
       }
    }

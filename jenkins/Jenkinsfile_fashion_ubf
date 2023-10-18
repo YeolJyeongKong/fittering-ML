@@ -3,40 +3,34 @@ pipeline {
 
    environment {
       CLUSTER_NAME = 'ML-cluster'
-      BENTO_NAME = 'fashion-ubf'
       SERVICE_NAME = 'fashion-ubf-service'
+      VENV_PATH = '/var/jenkins_home/miniconda3/envs/fashion-ubf-env/bin'
+      BENTOFILE_PATH = 'bentofile/bentofile_ubf.yaml'
+      BENTO_NAME = 'fashion-ubf'
    }
 
    stages {
       stage('Clone repository') {
          steps {
             checkout scm
-         }
-      }
 
-      stage('Delete old Bento') {
-         steps {
-            script {
-               try {
-                  sh 'bentoml delete ${BENTO_NAME} -y'
-               } catch (e){
-                  echo 'No old Bento to delete'
-               }
+            withCredentials([file(credentialsId: 'applicationDB', variable: 'rds_info'), 
+                             file(credentialsId: 'testDB', variable: 'rds_info_')]){
+               sh "cp /$rds_info serving/bentoml/rds_info.py"
+               sh "cp /$rds_info_ serving/bentoml/rds_info_.py"
             }
          }
       }
 
-      stage('Import Bento') {
+      stage('Build Bento'){
          steps {
-            withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
-               sh 'bentoml import s3://fittering-bento/${BENTO_NAME}.bento'
-            }
+            sh '${VENV_PATH}/bentoml build -f ${BENTOFILE_PATH}'
          }
       }
 
       stage ('Containerize') {
          steps {
-            sh 'bentoml containerize ${BENTO_NAME}:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}:latest'
+            sh '${VENV_PATH}/bentoml containerize ${BENTO_NAME}:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}:latest'
          }
       }
 
@@ -48,11 +42,21 @@ pipeline {
             }
          }
       }
+
       stage('Update ECS service') {
          steps {
             withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
                sh 'aws ecs update-service --cluster ${CLUSTER_NAME} --service ${SERVICE_NAME} --force-new-deployment'
             }
+         }
+      }
+
+      stage('Delete Bento & Docker images') {
+         steps {
+            sh '${VENV_PATH}/bentoml list'
+            sh '${VENV_PATH}/bentoml delete ${BENTO_NAME} -y'
+            sh 'docker images 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}'
+            sh 'docker rmi -f $(docker images -q 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME})'
          }
       }
    }
