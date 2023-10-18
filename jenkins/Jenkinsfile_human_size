@@ -7,7 +7,7 @@ pipeline {
       MODEL_DIR = 's3://fittering-bentoml-models'
       VENV_PATH = '/var/jenkins_home/miniconda3/envs/human-size-env/bin'
       BENTOFILE_PATH = 'bentofile/bentofile_human_size.yaml'
-      BENTO_NAME = 'human_size_predict:latest'
+      BENTO_NAME = 'human_size_predict'
    }
 
    stages {
@@ -33,7 +33,7 @@ pipeline {
 
       stage ('Containerize') {
          steps {
-            sh '${VENV_PATH}/bentoml containerize ${BENTO_NAME} -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}'
+            sh '${VENV_PATH}/bentoml containerize ${BENTO_NAME}:latest -t 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}:latest'
          }
       }
 
@@ -41,7 +41,7 @@ pipeline {
          steps {
             withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
                sh 'aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com'
-               sh 'docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}'
+               sh 'docker push 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}:latest'
             }
          }
       }
@@ -51,6 +51,15 @@ pipeline {
             withAWS(region: 'ap-northeast-2', credentials: 'soma1464'){
                sh 'aws ecs update-service --cluster ${CLUSTER_NAME} --service ${SERVICE_NAME} --force-new-deployment'
             }
+         }
+      }
+
+      stage('Delete Bento & Docker images') {
+         steps {
+            sh '${VENV_PATH}/bentoml list'
+            sh '${VENV_PATH}/bentoml delete ${BENTO_NAME} -y'
+            sh 'docker images 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME}'
+            sh 'docker rmi -f $(docker images -q 210651441624.dkr.ecr.ap-northeast-2.amazonaws.com/${BENTO_NAME})'
          }
       }
    }
