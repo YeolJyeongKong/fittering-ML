@@ -3,6 +3,19 @@ INFERENCE_BATCH_SIZE = 1
 TOP_K = 12
 RECOMMENDATION_N = 12
 
+# ------------------------ fashion-ubf ------------------------
+MEAS_COLUMN = [
+    "height",
+    "weight",
+    "arm",
+    "leg",
+    "shoulder",
+    "waist",
+    "chest",
+    "thigh",
+    "hip",
+]
+
 
 # ------------------------ label order ------------------------
 MEASUREMENTS_ORDER = [
