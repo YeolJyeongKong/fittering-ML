@@ -1,17 +1,38 @@
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
+import pyrootutils
+
+pyrootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
+from extras.constant import *
 
 
-def knn_predict(user_info, other_users, n_neighbors=5, n_recommendations=5):
+def knn_predict(user_id, users_df, n_neighbors=5, n_recommendations=5):
     knn = KNeighborsClassifier(n_neighbors=n_neighbors)
+    if (
+        users_df[users_df["user_id"] == user_id][["height", "weight"]]
+        .isna()
+        .any()
+        .any()
+    ):
+        return []
+    users_df[MEAS_COLUMN] = users_df[MEAS_COLUMN].fillna(users_df[MEAS_COLUMN].mean())
 
-    knn.fit(
-        other_users.drop(columns=["USER_ID", "GENDER", "PRODUCT_ID"]),
-        other_users["PRODUCT_ID"],
-    )
+    user_info = users_df[users_df["user_id"] == user_id]
+    other_users = users_df[
+        (users_df["user_id"] != user_id)
+        & (users_df["gender"] == user_info["gender"].to_list()[0])
+        & (users_df["product_id"].notna())
+    ]
+    if len(other_users) == 0:
+        return []
+
+    x = other_users.drop(columns=["user_id", "gender", "product_id"])
+    y = other_users["product_id"]
+
+    knn.fit(x, y)
 
     probalities = knn.predict_proba(
-        user_info.drop(columns=["USER_ID", "GENDER", "PRODUCT_ID"])
+        user_info.drop(columns=["user_id", "gender", "product_id"])
         .iloc[0]
         .values.reshape(1, -1)
     )[0]

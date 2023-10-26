@@ -66,15 +66,15 @@ def load_Product(cursor):
 
 def load_UserMeas(cursor):
     query = f"""
-        SELECT U.USER_ID AS USER_ID, U.GENDER AS GENDER, M.HEIGHT AS HEIGHT, M.WEIGHT AS WEIGHT, M.ARM AS ARM, M.LEG AS LEG, M.SHOULDER AS SHOULDER, M.WAIST AS WAIST, M.CHEST AS CHEST, M.THIGH AS THIGH, M.HIP AS HIP, U.PRODUCT_ID AS PRODUCT_ID
-        FROM MEASUREMENT M
+        SELECT U.user_id AS user_id, U.gender AS gender, M.height AS height, M.weight AS weight, M.arm AS arm, M.leg AS leg, M.shoulder AS shoulder, M.waist AS waist, M.chest AS chest, M.thigh AS thigh, M.hip AS hip, U.product_id AS product_id
+        FROM measurement M
         INNER JOIN (
-                SELECT U.USER_ID AS USER_ID, U.MEASUREMENT_ID AS MEASUREMENT_ID, U.GENDER AS GENDER, R.PRODUCT_ID AS PRODUCT_ID
-                FROM USER U
-                INNER JOIN (SELECT * FROM RECENT) R
-                ON U.USER_ID = R.USER_ID
+                SELECT U.user_id AS user_id, U.measurement_id AS measurement_id, U.gender AS gender, R.product_id AS product_id
+                FROM user U
+                LEFT JOIN (SELECT user_id, product_id, MAX(timestamp) FROM recent GROUP BY user_id) R
+                ON U.user_id = R.user_id
             ) U
-        ON M.MEASUREMENT_ID = U.MEASUREMENT_ID
+        ON M.measurement_id = U.measurement_id
     """
     cursor.execute(query)
     users = cursor.fetchall()
