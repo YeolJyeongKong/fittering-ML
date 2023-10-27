@@ -7,7 +7,6 @@ from extras.constant import *
 
 
 def knn_predict(user_id, users_df, n_neighbors=5, n_recommendations=5):
-    knn = KNeighborsClassifier(n_neighbors=n_neighbors)
     if (
         users_df[users_df["user_id"] == user_id][["height", "weight"]]
         .isna()
@@ -28,6 +27,7 @@ def knn_predict(user_id, users_df, n_neighbors=5, n_recommendations=5):
 
     x = other_users.drop(columns=["user_id", "gender", "product_id"])
     y = other_users["product_id"]
+    knn = KNeighborsClassifier(n_neighbors=min(n_neighbors, len(other_users)))
 
     knn.fit(x, y)
 
@@ -37,7 +37,10 @@ def knn_predict(user_id, users_df, n_neighbors=5, n_recommendations=5):
         .values.reshape(1, -1)
     )[0]
     recommendation_products = np.random.choice(
-        knn.classes_, n_recommendations, p=probalities, replace=False
+        knn.classes_,
+        min(n_recommendations, len(knn.classes_)),
+        p=probalities,
+        replace=False,
     ).tolist()
 
     return recommendation_products
