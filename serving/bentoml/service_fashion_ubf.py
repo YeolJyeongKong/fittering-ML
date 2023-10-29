@@ -11,6 +11,7 @@ svc = bentoml.Service(
     "fashion-ubf",
 )
 bentoml_logger = logging.getLogger("bentoml")
+bentoml_logger.setLevel(logging.DEBUG)
 
 
 @svc.api(
@@ -27,7 +28,7 @@ def fashion_ubf(
     user_id = userid_dict["user_id"]
     users_df = rds.load_UserMeas(cursor)
 
-    if user_id not in users_df["user_id"]:
+    if user_id not in users_df["user_id"].to_list():
         context.response.status_code = 404
         error_msg = f"user_id:{user_id} is not found in Database"
         bentoml_logger.error(error_msg)
@@ -37,5 +38,6 @@ def fashion_ubf(
         user_id, users_df, n_neighbors=10, n_recommendations=5
     )
     rds_conn.close()
+    bentoml_logger.debug(f"response body: {recommendation_products}")
 
     return {"product_ids": recommendation_products}
