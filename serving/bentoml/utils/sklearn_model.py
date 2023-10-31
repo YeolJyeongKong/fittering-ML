@@ -13,7 +13,7 @@ def knn_predict(user_id, users_df, n_neighbors=5, n_recommendations=5):
         .any()
         .any()
     ):
-        return []
+        return [], True
     users_df[MEAS_COLUMN] = users_df[MEAS_COLUMN].fillna(users_df[MEAS_COLUMN].mean())
 
     user_info = users_df[users_df["user_id"] == user_id]
@@ -23,7 +23,7 @@ def knn_predict(user_id, users_df, n_neighbors=5, n_recommendations=5):
         & (users_df["product_id"].notna())
     ]
     if len(other_users) == 0:
-        return []
+        return [], False
 
     x = other_users.drop(columns=["user_id", "gender", "product_id"])
     y = other_users["product_id"]
@@ -43,4 +43,4 @@ def knn_predict(user_id, users_df, n_neighbors=5, n_recommendations=5):
         replace=False,
     ).tolist()
 
-    return recommendation_products
+    return recommendation_products, False

@@ -34,9 +34,20 @@ def fashion_ubf(
         bentoml_logger.error(error_msg)
         return {"msg": error_msg}
 
-    recommendation_products = sklearn_model.knn_predict(
+    recommendation_products, flag = sklearn_model.knn_predict(
         user_id, users_df, n_neighbors=10, n_recommendations=5
     )
+    if not flag and recommendation_products == []:
+        products_df = rds.load_Product(cursor)
+        gender = users_df[users_df["user_id"] == user_id]["gender"].to_list()[0]
+
+        product_top_view = products_df[
+            (products_df["gender"] == "A") | (products_df["gender"] == gender)
+        ].sort_values(by="view", ascending=False)
+
+        recommendation_products = (
+            product_top_view[:10]["product_id"].sample(n=1).to_list()
+        )
     rds_conn.close()
     bentoml_logger.debug(f"response body: {recommendation_products}")
 

@@ -71,7 +71,10 @@ def load_UserMeas(cursor):
         INNER JOIN (
                 SELECT U.user_id AS user_id, U.measurement_id AS measurement_id, U.gender AS gender, R.product_id AS product_id
                 FROM user U
-                LEFT JOIN (SELECT user_id, product_id, MAX(timestamp) FROM recent GROUP BY user_id) R
+                LEFT JOIN (SELECT user_id, product_id 
+                            FROM recent
+                            where timestamp in (SELECT MAX(timestamp) as timestamp FROM recent GROUP BY user_id)
+                            ) R
                 ON U.user_id = R.user_id
             ) U
         ON M.measurement_id = U.measurement_id
