@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageOps
 import torch
 import bentoml
 from bentoml.io import JSON
@@ -42,6 +42,7 @@ def masking_user(
             Key=constant.S3_BUCKET_PATH_BODY + image_fname,
         )["Body"]
     )
+    image = ImageOps.exif_transpose(image)
     image_size = image.size
 
     image = segment_preprocess(image).unsqueeze(0)
